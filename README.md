@@ -1,0 +1,1 @@
+# PoC Trino connector for Wrike REST API
