@@ -17,7 +17,7 @@ public enum WrikeEntityType {
             ColumnMetadata.builder()
                     .setName("responsibleIds")
                     .setType(new ArrayType(VARCHAR))
-                    .setNullable(false)
+                    .setNullable(true)
                     .build()),
     CONTACT("contacts",
             "/contacts",
@@ -29,7 +29,7 @@ public enum WrikeEntityType {
         return ColumnMetadata.builder()
                 .setName(id)
                 .setType(VARCHAR)
-                .setNullable(false)
+                .setNullable(true)
                 .build();
     }
 

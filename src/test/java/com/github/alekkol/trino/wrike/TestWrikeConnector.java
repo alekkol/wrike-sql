@@ -48,4 +48,9 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
         assertQuerySucceeds("SELECT COUNT(*) FROM wrike.rest.tasks");
         assertQuerySucceeds("SELECT COUNT(*) FROM wrike.rest.contacts");
     }
+
+    @Test
+    public void testInsertTask() {
+        assertQuerySucceeds("INSERT INTO wrike.rest.tasks(title) VALUES('hello')");
+    }
 }

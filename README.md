@@ -2,8 +2,9 @@
 
 # Backlog:
 - [x] Schema introspection (`SHOW SCHEMAS`, `SHOW TABLES`, `SHOW COLUMNS`)
-- [ ] Query tasks, contacts with batches
-- [ ] JOIN support
+- [x] Query tasks, contacts with batches
+- [ ] API Pagination support
+- [x] JOIN support
 - [ ] INSERT tasks
 - [ ] PUSH-down filter by `id`
 - [ ] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
