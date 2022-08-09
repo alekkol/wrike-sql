@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.net.http.HttpClient.Redirect.NORMAL;
+import static java.util.Objects.requireNonNull;
 
 public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvider {
     private final HttpClient httpClient;
@@ -98,6 +99,9 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                                 }
                                 throw new RuntimeException(e);
                             }
+                            if (response.statusCode() / 100 != 2) {
+                                throw new IllegalStateException("REST query failed: status=" + response.statusCode() + ", body=" + response.body());
+                            }
                             ObjectMapper objectMapper = new ObjectMapper();
                             Map<String, Object> result;
                             try {
@@ -107,7 +111,7 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                                 throw new RuntimeException(e);
                             }
 
-                            data = (List<Map<String, Object>>) result.get("data");
+                            data = (List<Map<String, Object>>) requireNonNull(result.get("data"), "No 'data' in response");
                         }
 
                         return ++row < data.size();
