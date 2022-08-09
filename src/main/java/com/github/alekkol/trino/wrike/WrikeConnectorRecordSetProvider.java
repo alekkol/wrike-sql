@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvider {
-    private static final String BEARER = "Bearer eyJ0dCI6InAiLCJhbGciOiJIUzI1NiIsInR2IjoiMSJ9.eyJkIjoie1wiYVwiOjEwNzA0NzUsXCJpXCI6ODMyNjQ4NCxcImNcIjo0NTk2MzAxLFwidVwiOjIxMzQ3OTQsXCJyXCI6XCJVU1wiLFwic1wiOltcIldcIixcIkZcIixcIklcIixcIlVcIixcIktcIixcIkNcIixcIkRcIixcIk1cIixcIkFcIixcIkxcIixcIlBcIl0sXCJ6XCI6W10sXCJ0XCI6MH0iLCJpYXQiOjE2NTk4Nzg5NTJ9.SceleIIuXGW9uZWskIDObLUo-emEjXr-GmyvIdPfpB4";
-
     private final HttpClient httpClient;
 
     public WrikeConnectorRecordSetProvider() {
@@ -78,7 +76,7 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                             HttpResponse<String> response = httpClient.send(HttpRequest.newBuilder()
                                             .GET()
                                             .uri(URI.create("https://wrike.com/api/v4" + wrikeTableHandle.entityType().getEndpoint()))
-                                            .header("Authorization", BEARER)
+                                            .header("Authorization", "Bearer " + System.getProperty("com.github.alekkol.trino.wrike.token"))
                                             .build(),
                                     HttpResponse.BodyHandlers.ofString());
                         } catch (IOException | InterruptedException e) {

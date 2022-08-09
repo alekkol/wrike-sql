@@ -10,6 +10,7 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.transaction.IsolationLevel;
 import io.trino.spi.type.VarcharType;
 
 import java.util.List;
@@ -22,6 +23,11 @@ import static java.util.stream.Collectors.toMap;
 
 public class WrikeConnector implements Connector {
     private static final String SCHEMA = "rest";
+
+    @Override
+    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
+        return WrikeConnectorTransactionHandle.INSTANCE;
+    }
 
     @Override
     public ConnectorSplitManager getSplitManager() {

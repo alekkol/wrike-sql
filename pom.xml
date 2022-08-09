@@ -20,6 +20,9 @@
         <air.check.skip-license>true</air.check.skip-license>
         <air.check.skip-dependency>true</air.check.skip-dependency>
         <air.check.skip-modernizer>true</air.check.skip-modernizer>
+        <project.build.targetJdk>17</project.build.targetJdk>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>

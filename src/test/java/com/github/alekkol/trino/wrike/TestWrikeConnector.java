@@ -9,9 +9,8 @@ import org.testng.annotations.Test;
 import java.util.Map;
 
 import static io.trino.testing.TestingSession.testSessionBuilder;
-import static org.testng.Assert.*;
 
-public class WrikeConnectorTest extends AbstractTestQueryFramework {
+public class TestWrikeConnector extends AbstractTestQueryFramework {
     @Override
     protected QueryRunner createQueryRunner() throws Exception {
         Session defaultSession = testSessionBuilder()
@@ -26,7 +25,7 @@ public class WrikeConnectorTest extends AbstractTestQueryFramework {
 
         queryRunner.createCatalog(
                 "wrike",
-                "wrike",
+                "wrike-rest",
                 Map.of());
 
         return queryRunner;
@@ -34,7 +33,7 @@ public class WrikeConnectorTest extends AbstractTestQueryFramework {
 
     @Test
     public void testShowQueries() {
-        assertQuerySucceeds("SHOW SCHEMAS;");
-        assertQuerySucceeds("SHOW TABLE FROM SCHEMA rest;");
+        assertQuerySucceeds("SHOW SCHEMAS");
+        assertQuerySucceeds("SHOW TABLES FROM rest");
     }
 }
