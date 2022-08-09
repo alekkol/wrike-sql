@@ -1,8 +1,10 @@
 package com.github.alekkol.trino.wrike;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorRecordSetProvider;
 import io.trino.spi.connector.ConnectorSession;
@@ -11,6 +13,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
+import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
 
 import java.io.IOException;
@@ -18,12 +21,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static io.trino.spi.type.TypeUtils.writeNativeValue;
 import static java.net.http.HttpClient.Redirect.NORMAL;
 import static java.util.Objects.requireNonNull;
 
@@ -105,8 +109,10 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                             ObjectMapper objectMapper = new ObjectMapper();
                             Map<String, Object> result;
                             try {
+                                JsonParser parser = objectMapper.createParser(response.body());
+                                LowerCaseKeyJsonParser lowerCaseKeyJsonParser = new LowerCaseKeyJsonParser(parser);
                                 //noinspection unchecked
-                                result = objectMapper.readValue(response.body().getBytes(StandardCharsets.UTF_8), Map.class);
+                                result = objectMapper.readValue(lowerCaseKeyJsonParser, Map.class);
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
@@ -152,12 +158,20 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
 
                     @Override
                     public Object getObject(int field) {
-                        return readValue(field, Object.class);
+                        Object value = readValue(field, Object.class);
+                        if (value instanceof Collection<?> collection) {
+                            Type elementType = ((ArrayType) getType(field)).getElementType();
+                            BlockBuilder blockBuilder = elementType.createBlockBuilder(null, collection.size());
+                            collection.forEach(element -> writeNativeValue(elementType, blockBuilder, element));
+                            return blockBuilder.build();
+                        } else {
+                            return value;
+                        }
                     }
 
                     @Override
                     public boolean isNull(int field) {
-                        return getObject(field) == null;
+                        return readValue(field, Object.class) == null;
                     }
 
                     @Override

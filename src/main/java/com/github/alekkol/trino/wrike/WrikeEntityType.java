@@ -1,49 +1,37 @@
 package com.github.alekkol.trino.wrike;
 
 import io.trino.spi.connector.ColumnMetadata;
-import io.trino.spi.type.VarcharType;
+import io.trino.spi.type.ArrayType;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public enum WrikeEntityType {
     TASK("tasks",
-            "/tasks",
+            "/tasks?fields=%5B%22responsibleIds%22%5D", // todo hack
+            textScalar("id"),
+            textScalar("title"),
+            textScalar("status"),
             ColumnMetadata.builder()
-                    .setName("id")
-                    .setType(VARCHAR)
-                    .setNullable(false)
-                    .build(),
-            ColumnMetadata.builder()
-                    .setName("title")
-                    .setType(VARCHAR)
-                    .setNullable(false)
-                    .build(),
-            ColumnMetadata.builder()
-                    .setName("status")
-                    .setType(VARCHAR)
+                    .setName("responsibleIds")
+                    .setType(new ArrayType(VARCHAR))
                     .setNullable(false)
                     .build()),
     CONTACT("contacts",
             "/contacts",
-            ColumnMetadata.builder()
-                    .setName("id")
-                    .setType(VARCHAR)
-                    .setNullable(false)
-                    .build(),
-            ColumnMetadata.builder()
-                    .setName("firstName")
-                    .setType(VARCHAR)
-                    .setNullable(false)
-                    .build(),
-            ColumnMetadata.builder()
-                    .setName("lastName")
-                    .setType(VARCHAR)
-                    .setNullable(false)
-                    .build());
+            textScalar("id"),
+            textScalar("firstName"),
+            textScalar("lastName"));
+
+    private static ColumnMetadata textScalar(String id) {
+        return ColumnMetadata.builder()
+                .setName(id)
+                .setType(VARCHAR)
+                .setNullable(false)
+                .build();
+    }
 
     private final String tableName;
     private final String endpoint;
