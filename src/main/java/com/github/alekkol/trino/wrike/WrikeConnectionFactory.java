@@ -14,6 +14,6 @@ public class WrikeConnectionFactory implements ConnectorFactory {
 
     @Override
     public Connector create(String catalogName, Map<String, String> config, ConnectorContext context) {
-        return new WrikeConnector();
+        return new WrikeConnector(context.getNodeManager());
     }
 }

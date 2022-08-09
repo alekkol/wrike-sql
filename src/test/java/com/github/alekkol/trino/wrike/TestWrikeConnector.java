@@ -36,4 +36,16 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
         assertQuerySucceeds("SHOW SCHEMAS");
         assertQuerySucceeds("SHOW TABLES FROM rest");
     }
+
+    @Test
+    public void testSelectAll() {
+        assertQuerySucceeds("SELECT * FROM wrike.rest.tasks");
+        assertQuerySucceeds("SELECT * FROM wrike.rest.contacts");
+    }
+
+    @Test
+    public void testSelectCount() {
+        assertQuerySucceeds("SELECT COUNT(*) FROM wrike.rest.tasks");
+        assertQuerySucceeds("SELECT COUNT(*) FROM wrike.rest.contacts");
+    }
 }
