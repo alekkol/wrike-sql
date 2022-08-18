@@ -5,7 +5,8 @@
 - [x] Query tasks, contacts with batches
 - [ ] API Pagination support
 - [x] JOIN support
-- [ ] INSERT tasks
+- [x] INSERT tasks (`INSERT INTO tasks(title) VALUES('hello')`)
 - [ ] PUSH-down filter by `id`
 - [ ] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
 - [ ] DELETE tasks
+- [ ] Run Trino with Wrike plugin in embedded mode

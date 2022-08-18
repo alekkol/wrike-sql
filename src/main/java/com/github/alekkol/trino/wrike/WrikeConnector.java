@@ -2,7 +2,6 @@ package com.github.alekkol.trino.wrike;
 
 import io.airlift.slice.Slice;
 import io.trino.spi.NodeManager;
-import io.trino.spi.Page;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.Connector;
@@ -28,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
@@ -62,41 +61,14 @@ public class WrikeConnector implements Connector {
         return new ConnectorPageSinkProvider() {
             @Override
             public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle outputTableHandle) {
-                return new ConnectorPageSink() {
-                    @Override
-                    public CompletableFuture<?> appendPage(Page page) {
-                        return null;
-                    }
-
-                    @Override
-                    public CompletableFuture<Collection<Slice>> finish() {
-                        return null;
-                    }
-
-                    @Override
-                    public void abort() {
-
-                    }
-                };
+                throw new UnsupportedOperationException("DDL not supported");
             }
 
             @Override
             public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle) {
-                return new ConnectorPageSink() {
-                    @Override
-                    public CompletableFuture<?> appendPage(Page page) {
-                        return CompletableFuture.completedFuture(null);
-                    }
+                WrikeInsertTableHandle wrikeInsertTableHandle = (WrikeInsertTableHandle) insertTableHandle;
 
-                    @Override
-                    public CompletableFuture<Collection<Slice>> finish() {
-                        return CompletableFuture.completedFuture(List.of());
-                    }
-
-                    @Override
-                    public void abort() {
-                    }
-                };
+                return new WrikePageSink(wrikeInsertTableHandle.entityType());
             }
         };
     }
@@ -128,7 +100,9 @@ public class WrikeConnector implements Connector {
                 WrikeEntityType entityType = wrikeTableHandle.entityType();
                 return new ConnectorTableMetadata(
                         SchemaTableName.schemaTableName(SCHEMA, entityType.getTableName()),
-                        entityType.getColumns());
+                        entityType.getColumns().stream()
+                                .map(WrikeRestColumn::metadata)
+                                .toList());
             }
 
             @Override
@@ -136,19 +110,24 @@ public class WrikeConnector implements Connector {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
 
                 return wrikeTableHandle.entityType().getColumns().stream()
-                        .collect(toMap(ColumnMetadata::getName, WrikeColumnHandle::new));
+                        .map(WrikeRestColumn::metadata)
+                        .map(ColumnMetadata::getName)
+                        .collect(toMap(Function.identity(), WrikeColumnHandle::new));
             }
 
             @Override
             public ColumnMetadata getColumnMetadata(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle) {
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
                 WrikeColumnHandle wrikeColumnHandle = (WrikeColumnHandle) columnHandle;
 
-                return wrikeColumnHandle.toColumnMetadata();
+                return wrikeTableHandle.entityType().getColumn(wrikeColumnHandle.name()).metadata();
             }
 
             @Override
             public ConnectorInsertTableHandle beginInsert(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> columns, RetryMode retryMode) {
-                return new WrikeInsertTableHandle();
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
+
+                return new WrikeInsertTableHandle(wrikeTableHandle.entityType());
             }
 
             @Override

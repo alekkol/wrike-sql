@@ -8,41 +8,15 @@ import io.trino.spi.type.Type;
 
 import static java.util.Objects.requireNonNull;
 
-public record WrikeColumnHandle(String name, Type type, boolean nullable) implements ColumnHandle {
+public record WrikeColumnHandle(String name) implements ColumnHandle {
     @JsonCreator
-    public WrikeColumnHandle(@JsonProperty("name") String name, @JsonProperty("type") Type type, @JsonProperty("nullable") boolean nullable) {
+    public WrikeColumnHandle(@JsonProperty("name") String name) {
         this.name = requireNonNull(name);
-        this.type = requireNonNull(type);
-        this.nullable = nullable;
-    }
-
-    public WrikeColumnHandle(ColumnMetadata metadata) {
-        this(metadata.getName(), metadata.getType(), metadata.isNullable());
     }
 
     @Override
     @JsonProperty("name")
     public String name() {
         return name;
-    }
-
-    @Override
-    @JsonProperty("type")
-    public Type type() {
-        return type;
-    }
-
-    @Override
-    @JsonProperty("nullable")
-    public boolean nullable() {
-        return nullable;
-    }
-
-    public ColumnMetadata toColumnMetadata() {
-        return ColumnMetadata.builder()
-                .setName(name)
-                .setType(type)
-                .setNullable(nullable)
-                .build();
     }
 }

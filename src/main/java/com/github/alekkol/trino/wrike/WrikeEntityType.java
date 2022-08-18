@@ -1,45 +1,32 @@
 package com.github.alekkol.trino.wrike;
 
-import io.trino.spi.connector.ColumnMetadata;
-import io.trino.spi.type.ArrayType;
-
 import java.util.List;
 import java.util.stream.Stream;
-
-import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public enum WrikeEntityType {
     TASK("tasks",
             "/tasks?fields=%5B%22responsibleIds%22%5D", // todo hack
-            textScalar("id"),
-            textScalar("title"),
-            textScalar("status"),
-            ColumnMetadata.builder()
-                    .setName("responsibleIds")
-                    .setType(new ArrayType(VARCHAR))
-                    .setNullable(true)
-                    .build()),
+            "/tasks",
+            new WrikeTextRestColumn("id"),
+            new WrikeTextRestColumn("title"),
+            new WrikeTextRestColumn("status"),
+            new WrikeTextArrayRestColumn("responsibleIds")),
     CONTACT("contacts",
             "/contacts",
-            textScalar("id"),
-            textScalar("firstName"),
-            textScalar("lastName"));
-
-    private static ColumnMetadata textScalar(String id) {
-        return ColumnMetadata.builder()
-                .setName(id)
-                .setType(VARCHAR)
-                .setNullable(true)
-                .build();
-    }
+            "/dummy",
+            new WrikeTextRestColumn("id"),
+            new WrikeTextRestColumn("firstName"),
+            new WrikeTextRestColumn("lastName"));
 
     private final String tableName;
-    private final String endpoint;
-    private final List<ColumnMetadata> columns;
+    private final String selectEndpoint;
+    private final String insertEndpoint;
+    private final List<WrikeRestColumn> columns;
 
-    WrikeEntityType(String tableName, String endpoint, ColumnMetadata... columns) {
+    WrikeEntityType(String tableName, String selectEndpoint, String insertEndpoint, WrikeRestColumn... columns) {
         this.tableName = tableName;
-        this.endpoint = endpoint;
+        this.selectEndpoint = selectEndpoint;
+        this.insertEndpoint = insertEndpoint;
         this.columns = List.of(columns);
     }
 
@@ -54,11 +41,23 @@ public enum WrikeEntityType {
         return tableName;
     }
 
-    public String getEndpoint() {
-        return endpoint;
+    public String getSelectEndpoint() {
+        return selectEndpoint;
     }
 
-    public List<ColumnMetadata> getColumns() {
+    public String getInsertEndpoint() {
+        return insertEndpoint;
+    }
+
+    public List<WrikeRestColumn> getColumns() {
         return columns;
+    }
+
+    public WrikeRestColumn getColumn(String name) {
+        return columns.stream()
+                .filter(column -> name.equalsIgnoreCase(column.metadata().getName()))
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("No '%s' column in table '%s'"
+                        .formatted(name, tableName)));
     }
 }

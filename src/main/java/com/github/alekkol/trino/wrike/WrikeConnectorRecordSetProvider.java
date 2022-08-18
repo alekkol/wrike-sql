@@ -1,11 +1,9 @@
 package com.github.alekkol.trino.wrike;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
-import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorRecordSetProvider;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
@@ -13,7 +11,6 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
-import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
 
 import java.io.IOException;
@@ -22,12 +19,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static io.trino.spi.type.TypeUtils.writeNativeValue;
 import static java.net.http.HttpClient.Redirect.NORMAL;
 import static java.util.Objects.requireNonNull;
 
@@ -49,12 +44,14 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                                   ConnectorTableHandle table,
                                   List<? extends ColumnHandle> columns) {
         WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) table;
-
-        List<WrikeColumnHandle> wrikeColumnHandles = columns.stream()
+        List<WrikeRestColumn> wrikeRestColumns = columns.stream()
                 .map(WrikeColumnHandle.class::cast)
+                .map(WrikeColumnHandle::name)
+                .map(column -> wrikeTableHandle.entityType().getColumn(column))
                 .toList();
-        List<Type> types = wrikeColumnHandles.stream()
-                .map(WrikeColumnHandle::type)
+        List<Type> types = wrikeRestColumns.stream()
+                .map(WrikeRestColumn::metadata)
+                .map(ColumnMetadata::getType)
                 .toList();
 
         return new RecordSet() {
@@ -93,7 +90,7 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                             try {
                                 response = httpClient.send(HttpRequest.newBuilder()
                                                 .GET()
-                                                .uri(URI.create("https://www.wrike.com/api/v4" + wrikeTableHandle.entityType().getEndpoint()))
+                                                .uri(URI.create("https://www.wrike.com/api/v4" + wrikeTableHandle.entityType().getSelectEndpoint()))
                                                 .header("Authorization", "Bearer " + System.getProperty("com.github.alekkol.trino.wrike.token"))
                                                 .build(),
                                         HttpResponse.BodyHandlers.ofString());
@@ -109,10 +106,8 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                             ObjectMapper objectMapper = new ObjectMapper();
                             Map<String, Object> result;
                             try {
-                                JsonParser parser = objectMapper.createParser(response.body());
-                                LowerCaseKeyJsonParser lowerCaseKeyJsonParser = new LowerCaseKeyJsonParser(parser);
                                 //noinspection unchecked
-                                result = objectMapper.readValue(lowerCaseKeyJsonParser, Map.class);
+                                result = objectMapper.readValue(response.body(), Map.class);
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
@@ -123,55 +118,38 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                         return ++row < data.size();
                     }
 
-                    private <T> T readValue(int field, Class<T> clazz) {
-                        Map<String, Object> object = data.get(row);
-                        if (object == null) {
-                            throw new IllegalStateException("No value at index: " + row);
-                        }
-                        WrikeColumnHandle column = wrikeColumnHandles.get(field);
-                        if (column == null) {
-                            throw new IllegalStateException("No column at index: " + field);
-                        }
-                        return clazz.cast(object.get(column.name())); // 1:1 mapping REST field and DB column
+                    private Map<String, ?> currentRow() {
+                        return data.get(row);
                     }
 
                     @Override
                     public boolean getBoolean(int field) {
-                        return readValue(field, Boolean.class);
+                        return wrikeRestColumns.get(field).readBoolean(currentRow());
                     }
 
                     @Override
                     public long getLong(int field) {
-                        return readValue(field, Long.class);
+                        return wrikeRestColumns.get(field).readLong(currentRow());
                     }
 
                     @Override
                     public double getDouble(int field) {
-                        return readValue(field, Double.class);
+                        return wrikeRestColumns.get(field).readDouble(currentRow());
                     }
 
                     @Override
                     public Slice getSlice(int field) {
-                        String value = readValue(field, String.class);
-                        return Slices.utf8Slice(value);
+                        return wrikeRestColumns.get(field).readSlice(currentRow());
                     }
 
                     @Override
                     public Object getObject(int field) {
-                        Object value = readValue(field, Object.class);
-                        if (value instanceof Collection<?> collection) {
-                            Type elementType = ((ArrayType) getType(field)).getElementType();
-                            BlockBuilder blockBuilder = elementType.createBlockBuilder(null, collection.size());
-                            collection.forEach(element -> writeNativeValue(elementType, blockBuilder, element));
-                            return blockBuilder.build();
-                        } else {
-                            return value;
-                        }
+                        return wrikeRestColumns.get(field).readObject(currentRow());
                     }
 
                     @Override
                     public boolean isNull(int field) {
-                        return readValue(field, Object.class) == null;
+                        return wrikeRestColumns.get(field).isNull(currentRow());
                     }
 
                     @Override
