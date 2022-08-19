@@ -6,13 +6,15 @@ import java.util.stream.Stream;
 import static com.github.alekkol.trino.wrike.WrikeTextArrayRestColumn.textArray;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.primaryKey;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.text;
+import static com.github.alekkol.trino.wrike.WrikeTimestampRestColumn.timestamp;
 
 public enum WrikeEntityType {
     TASK("tasks",
             "/tasks?fields=%5B%22responsibleIds%22%5D", // todo hack
             "/tasks",
             List.of(primaryKey("id"), text("title"),
-                    text("status"), textArray("responsibleIds"))),
+                    text("status"), timestamp("createdDate"),
+                    textArray("responsibleIds"))),
     CONTACT("contacts",
             "/contacts",
             "/contacts",
