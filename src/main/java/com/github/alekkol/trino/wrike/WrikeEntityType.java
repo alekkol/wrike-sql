@@ -14,7 +14,7 @@ public enum WrikeEntityType {
             "/tasks",
             List.of(primaryKey("id"), text("title"),
                     text("status"), timestamp("createdDate"),
-                    textArray("responsibleIds"))),
+                    textArray("responsibleIds"), text("permalink"))),
     CONTACT("contacts",
             "/contacts",
             "/contacts",
