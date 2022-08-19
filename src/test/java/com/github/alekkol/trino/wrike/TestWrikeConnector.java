@@ -39,6 +39,12 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
     }
 
     @Test
+    public void testShowColumns() {
+        assertThat(computeActual("SHOW COLUMNS FROM rest.tasks")).isNotEmpty();
+        assertThat(computeActual("SHOW COLUMNS FROM rest.contacts")).isNotEmpty();
+    }
+
+    @Test
     public void testSelectAll() {
         assertQuerySucceeds("SELECT * FROM wrike.rest.tasks");
         assertQuerySucceeds("SELECT * FROM wrike.rest.contacts");

@@ -2,31 +2,14 @@ package com.github.alekkol.trino.wrike;
 
 import io.airlift.slice.Slice;
 import io.trino.spi.NodeManager;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ColumnMetadata;
-import io.trino.spi.connector.Connector;
-import io.trino.spi.connector.ConnectorInsertTableHandle;
-import io.trino.spi.connector.ConnectorMetadata;
-import io.trino.spi.connector.ConnectorOutputMetadata;
-import io.trino.spi.connector.ConnectorOutputTableHandle;
-import io.trino.spi.connector.ConnectorPageSink;
-import io.trino.spi.connector.ConnectorPageSinkProvider;
-import io.trino.spi.connector.ConnectorRecordSetProvider;
-import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.ConnectorSplitManager;
-import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.ConnectorTableMetadata;
-import io.trino.spi.connector.ConnectorTransactionHandle;
-import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.ConstraintApplicationResult;
-import io.trino.spi.connector.RetryMode;
-import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.*;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.transaction.IsolationLevel;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +73,19 @@ public class WrikeConnector implements Connector {
                 return Stream.of(WrikeEntityType.values())
                         .map(entityType -> new SchemaTableName(SCHEMA, entityType.name()))
                         .toList();
+            }
+
+            @Override
+            public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
+                return prefix.getTable()
+                        .map(WrikeEntityType::fromTableName)
+                        .map(entityType -> TableColumnsMetadata.forTable(
+                                SchemaTableName.schemaTableName(SCHEMA, entityType.getTableName()),
+                                entityType.getColumns().stream()
+                                        .map(WrikeRestColumn::metadata)
+                                        .toList()))
+                        .stream()
+                        .iterator();
             }
 
             @Override
