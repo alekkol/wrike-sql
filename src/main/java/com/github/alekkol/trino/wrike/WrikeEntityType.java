@@ -3,31 +3,31 @@ package com.github.alekkol.trino.wrike;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.alekkol.trino.wrike.WrikeTextArrayRestColumn.textArray;
+import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.primaryKey;
+import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.text;
+
 public enum WrikeEntityType {
     TASK("tasks",
             "/tasks?fields=%5B%22responsibleIds%22%5D", // todo hack
             "/tasks",
-            new WrikeTextRestColumn("id"),
-            new WrikeTextRestColumn("title"),
-            new WrikeTextRestColumn("status"),
-            new WrikeTextArrayRestColumn("responsibleIds")),
+            List.of(primaryKey("id"), text("title"),
+                    text("status"), textArray("responsibleIds"))),
     CONTACT("contacts",
             "/contacts",
-            "/dummy",
-            new WrikeTextRestColumn("id"),
-            new WrikeTextRestColumn("firstName"),
-            new WrikeTextRestColumn("lastName"));
+            "/contacts",
+            List.of(primaryKey("id"), text("firstName"), text("lastName")));
 
     private final String tableName;
-    private final String selectEndpoint;
-    private final String insertEndpoint;
+    private final String selectAllEndpoint;
+    private final String baseEndpoint;
     private final List<WrikeRestColumn> columns;
 
-    WrikeEntityType(String tableName, String selectEndpoint, String insertEndpoint, WrikeRestColumn... columns) {
+    WrikeEntityType(String tableName, String selectAllEndpoint, String baseEndpoint, List<WrikeRestColumn> columns) {
         this.tableName = tableName;
-        this.selectEndpoint = selectEndpoint;
-        this.insertEndpoint = insertEndpoint;
-        this.columns = List.of(columns);
+        this.selectAllEndpoint = selectAllEndpoint;
+        this.baseEndpoint = baseEndpoint;
+        this.columns = columns;
     }
 
     public static WrikeEntityType fromTableName(String tableName) {
@@ -41,16 +41,23 @@ public enum WrikeEntityType {
         return tableName;
     }
 
-    public String getSelectEndpoint() {
-        return selectEndpoint;
+    public String getSelectAllEndpoint() {
+        return selectAllEndpoint;
     }
 
-    public String getInsertEndpoint() {
-        return insertEndpoint;
+    public String getBaseEndpoint() {
+        return baseEndpoint;
     }
 
     public List<WrikeRestColumn> getColumns() {
         return columns;
+    }
+
+    public WrikeRestColumn getPkColumn() {
+        return columns.stream()
+                .filter(WrikeRestColumn::isPrimaryKey)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("No PK for entity type: " + this));
     }
 
     public WrikeRestColumn getColumn(String name) {

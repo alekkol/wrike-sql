@@ -44,10 +44,11 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                                   ConnectorTableHandle table,
                                   List<? extends ColumnHandle> columns) {
         WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) table;
+        WrikeEntityType wrikeEntityType = wrikeTableHandle.entityType();
         List<WrikeRestColumn> wrikeRestColumns = columns.stream()
                 .map(WrikeColumnHandle.class::cast)
                 .map(WrikeColumnHandle::name)
-                .map(column -> wrikeTableHandle.entityType().getColumn(column))
+                .map(wrikeEntityType::getColumn)
                 .toList();
         List<Type> types = wrikeRestColumns.stream()
                 .map(WrikeRestColumn::metadata)
@@ -88,9 +89,15 @@ public class WrikeConnectorRecordSetProvider implements ConnectorRecordSetProvid
                         if (data == null) {
                             HttpResponse<String> response;
                             try {
-                                response = httpClient.send(HttpRequest.newBuilder()
+                                final StringBuilder uriBuilder = new StringBuilder();
+                                uriBuilder.append("https://www.wrike.com/api/v4");
+                                wrikeTableHandle.id().ifPresentOrElse(
+                                        id -> uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("/").append(id),
+                                        () -> uriBuilder.append(wrikeEntityType.getSelectAllEndpoint()));
+                                response = httpClient.send(
+                                        HttpRequest.newBuilder()
                                                 .GET()
-                                                .uri(URI.create("https://www.wrike.com/api/v4" + wrikeTableHandle.entityType().getSelectEndpoint()))
+                                                .uri(URI.create(uriBuilder.toString()))
                                                 .header("Authorization", "Bearer " + System.getProperty("com.github.alekkol.trino.wrike.token"))
                                                 .build(),
                                         HttpResponse.BodyHandlers.ofString());

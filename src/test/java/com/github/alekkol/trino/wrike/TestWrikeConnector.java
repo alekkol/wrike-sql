@@ -9,6 +9,7 @@ import org.testng.annotations.Test;
 import java.util.Map;
 
 import static io.trino.testing.TestingSession.testSessionBuilder;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestWrikeConnector extends AbstractTestQueryFramework {
     @Override
@@ -41,6 +42,24 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
     public void testSelectAll() {
         assertQuerySucceeds("SELECT * FROM wrike.rest.tasks");
         assertQuerySucceeds("SELECT * FROM wrike.rest.contacts");
+    }
+
+    @Test
+    public void testSelectTaskById() {
+        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks LIMIT 1")
+                .getOnlyValue()
+                .toString();
+        assertThat(computeActual("SELECT id FROM wrike.rest.tasks WHERE id = '%s'".formatted(taskId)).getOnlyValue())
+                .isEqualTo(taskId);
+    }
+
+    @Test
+    public void testSelectContactById() {
+        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.contacts LIMIT 1")
+                .getOnlyValue()
+                .toString();
+        assertThat(computeActual("SELECT id FROM wrike.rest.contacts WHERE id = '%s'".formatted(taskId)).getOnlyValue())
+                .isEqualTo(taskId);
     }
 
     @Test

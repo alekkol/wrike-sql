@@ -18,15 +18,30 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
     private static final VarcharType type = VARCHAR;
 
     private final String name;
+    private final boolean primaryKey;
     private final ColumnMetadata metadata;
 
-    public WrikeTextRestColumn(String name) {
+    private WrikeTextRestColumn(String name, boolean primaryKey) {
         this.name = Objects.requireNonNull(name);
         this.metadata = ColumnMetadata.builder()
                 .setName(name)
                 .setType(type)
                 .setNullable(true)
                 .build();
+        this.primaryKey = primaryKey;
+    }
+
+    public static WrikeTextRestColumn primaryKey(String name) {
+        return new WrikeTextRestColumn(name, true);
+    }
+
+    public static WrikeTextRestColumn text(String name) {
+        return new WrikeTextRestColumn(name, false);
+    }
+
+    @Override
+    public boolean isPrimaryKey() {
+        return primaryKey;
     }
 
     @Override

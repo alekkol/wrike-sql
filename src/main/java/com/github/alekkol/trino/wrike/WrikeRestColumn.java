@@ -8,6 +8,8 @@ import java.net.http.HttpRequest;
 import java.util.Map;
 
 public interface WrikeRestColumn {
+    boolean isPrimaryKey();
+
     ColumnMetadata metadata();
 
     HttpRequest.BodyPublisher write(Block block, int position);

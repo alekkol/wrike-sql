@@ -24,13 +24,22 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     private final String name;
     private final ColumnMetadata metadata;
 
-    public WrikeTextArrayRestColumn(String name) {
+    private WrikeTextArrayRestColumn(String name) {
         this.name = Objects.requireNonNull(name);
         this.metadata = ColumnMetadata.builder()
                 .setName(name)
                 .setType(type)
                 .setNullable(true)
                 .build();
+    }
+
+    public static WrikeTextArrayRestColumn textArray(String name) {
+        return new WrikeTextArrayRestColumn(name);
+    }
+
+    @Override
+    public boolean isPrimaryKey() {
+        return false;
     }
 
     @Override
