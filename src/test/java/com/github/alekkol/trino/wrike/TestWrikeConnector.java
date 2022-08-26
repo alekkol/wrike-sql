@@ -61,11 +61,11 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
 
     @Test
     public void testSelectContactById() {
-        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.contacts LIMIT 1")
+        String contactId = getQueryRunner().execute("SELECT id FROM wrike.rest.contacts LIMIT 1")
                 .getOnlyValue()
                 .toString();
-        assertThat(computeActual("SELECT id FROM wrike.rest.contacts WHERE id = '%s'".formatted(taskId)).getOnlyValue())
-                .isEqualTo(taskId);
+        assertThat(computeActual("SELECT id FROM wrike.rest.contacts WHERE id = '%s'".formatted(contactId)).getOnlyValue())
+                .isEqualTo(contactId);
     }
 
     @Test
@@ -77,5 +77,13 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
     @Test
     public void testInsertTask() {
         assertQuerySucceeds("INSERT INTO wrike.rest.tasks(title) VALUES('hello')");
+    }
+
+    @Test
+    public void testDeleteTaskById() {
+        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks LIMIT 1")
+                .getOnlyValue()
+                .toString();
+        assertQuerySucceeds("DELETE FROM wrike.rest.tasks WHERE id = '%s'".formatted(taskId));
     }
 }

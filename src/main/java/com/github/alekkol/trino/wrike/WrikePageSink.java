@@ -35,21 +35,10 @@ public class WrikePageSink implements ConnectorPageSink {
             }
         }
         BodyPublisher body = HttpRequest.BodyPublishers.concat(bodyPublishers.toArray(new BodyPublisher[0]));
-        HttpRequest request = HttpRequest.newBuilder()
-                .POST(body)
-                .uri(URI.create("https://www.wrike.com/api/v4" + entityType.getBaseEndpoint()))
-                .header("Authorization", "Bearer " + System.getProperty("com.github.alekkol.trino.wrike.token"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .build();
-        future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenCompose(response -> {
-                    if (response.statusCode() / 100 != 2) {
-                        return CompletableFuture.failedFuture(
-                                new IllegalStateException("REST query failed: status=" + response.statusCode() + ", body=" + response.body()));
-                    } else {
-                        return CompletableFuture.completedFuture(response.body());
-                    }
-                });
+        URI uri = URI.create("https://www.wrike.com/api/v4" + entityType.getBaseEndpoint());
+        future = Http.async(request -> request.POST(body)
+                .uri(uri)
+                .header("Content-Type", "application/x-www-form-urlencoded"));
         return future;
     }
 

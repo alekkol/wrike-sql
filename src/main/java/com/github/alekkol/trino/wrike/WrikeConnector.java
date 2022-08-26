@@ -39,8 +39,8 @@ public class WrikeConnector implements Connector {
     }
 
     @Override
-    public ConnectorRecordSetProvider getRecordSetProvider() {
-        return new WrikeConnectorRecordSetProvider();
+    public ConnectorPageSourceProvider getPageSourceProvider() {
+        return new WrikePageSourceProvider();
     }
 
     @Override
@@ -175,6 +175,22 @@ public class WrikeConnector implements Connector {
                             TupleDomain.withColumnDomains(otherColumnDomains),
                             false));
                 }
+            }
+
+            @Override
+            public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
+                WrikeRestColumn pkColumn = wrikeTableHandle.entityType().getPkColumn();
+                return new WrikeColumnHandle(pkColumn.metadata().getName(), false);
+            }
+
+            @Override
+            public ConnectorTableHandle beginDelete(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
+                return tableHandle;
+            }
+
+            @Override
+            public void finishDelete(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
             }
         };
     }

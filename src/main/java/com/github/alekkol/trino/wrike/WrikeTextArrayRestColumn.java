@@ -48,6 +48,22 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     }
 
     @Override
+    public void read(Map<String, ?> json, BlockBuilder blockBuilder) {
+        Object raw = json.get(name);
+        if (raw == null) {
+            blockBuilder.appendNull();
+        } else if (raw instanceof Collection<?> collection) {
+            Type elementType = type.getElementType();
+            BlockBuilder arrayBlockBuilder = elementType.createBlockBuilder(null, collection.size());
+            collection.forEach(element -> writeNativeValue(type.getElementType(), arrayBlockBuilder, element));
+            Block arrayBlock = arrayBlockBuilder.build();
+            type.writeObject(blockBuilder, arrayBlock);
+        } else {
+            throw new IllegalStateException("Not a collection: " + raw);
+        }
+    }
+
+    @Override
     public HttpRequest.BodyPublisher write(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
@@ -61,23 +77,5 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
         } else {
             throw new IllegalStateException("Not a collection: " + raw);
         }
-    }
-
-    @Override
-    public Object readObject(Map<String, ?> json) {
-        Object raw = json.get(name);
-        if (raw instanceof Collection<?> collection) {
-            Type elementType = type.getElementType();
-            BlockBuilder blockBuilder = elementType.createBlockBuilder(null, collection.size());
-            collection.forEach(element -> writeNativeValue(elementType, blockBuilder, element));
-            return blockBuilder.build();
-        } else {
-            throw new IllegalStateException("Not a collection: " + raw);
-        }
-    }
-
-    @Override
-    public boolean isNull(Map<String, ?> json) {
-        return json.get(name) == null;
     }
 }

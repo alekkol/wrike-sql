@@ -3,6 +3,7 @@ package com.github.alekkol.trino.wrike;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.type.VarcharType;
 
@@ -50,6 +51,19 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
     }
 
     @Override
+    public void read(Map<String, ?> json, BlockBuilder blockBuilder) {
+        Object raw = json.get(name);
+        if (raw == null) {
+            blockBuilder.appendNull();
+        } else if (raw instanceof String text) {
+            Slice slice = Slices.utf8Slice(text);
+            blockBuilder.writeBytes(slice, 0, slice.length()).closeEntry();
+        } else {
+            throw new IllegalStateException("Not a string " + raw);
+        }
+    }
+
+    @Override
     public HttpRequest.BodyPublisher write(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
@@ -59,20 +73,5 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }
-    }
-
-    @Override
-    public Slice readSlice(Map<String, ?> json) {
-        Object raw = json.get(name);
-        if (raw instanceof String text) {
-            return Slices.utf8Slice(text);
-        } else {
-            throw new IllegalStateException("Not a string " + raw);
-        }
-    }
-
-    @Override
-    public boolean isNull(Map<String, ?> json) {
-        return json.get(name) == null;
     }
 }

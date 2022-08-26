@@ -1,6 +1,7 @@
 package com.github.alekkol.trino.wrike;
 
 import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.type.TimestampType;
 
@@ -43,6 +44,19 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
     }
 
     @Override
+    public void read(Map<String, ?> json, BlockBuilder blockBuilder) {
+        Object raw = json.get(name);
+        if (raw == null) {
+            blockBuilder.appendNull();
+        } else if (raw instanceof String date) {
+            long epochMicros = Instant.parse(date).getEpochSecond() * 1_000_000;
+            blockBuilder.writeLong(epochMicros).closeEntry();
+        } else {
+            throw new IllegalStateException("Not a string " + raw);
+        }
+    }
+
+    @Override
     public HttpRequest.BodyPublisher write(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
@@ -52,20 +66,5 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }
-    }
-
-    @Override
-    public long readLong(Map<String, ?> json) {
-        Object raw = json.get(name);
-        if (raw instanceof String date) {
-            return Instant.parse(date).getEpochSecond() * 1_000_000;
-        } else {
-            throw new IllegalStateException("Not a string " + raw);
-        }
-    }
-
-    @Override
-    public boolean isNull(Map<String, ?> json) {
-        return json.get(name) == null;
     }
 }
