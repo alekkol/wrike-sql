@@ -5,14 +5,12 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.type.TimestampType;
 
-import java.net.http.HttpRequest;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static io.trino.spi.type.TimestampType.TIMESTAMP_SECONDS;
-import static java.net.http.HttpRequest.BodyPublishers.noBody;
-import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 public class WrikeTimestampRestColumn implements WrikeRestColumn {
     private static final TimestampType type = TIMESTAMP_SECONDS;
@@ -44,7 +42,7 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public void read(Map<String, ?> json, BlockBuilder blockBuilder) {
+    public void toBlock(Map<String, ?> json, BlockBuilder blockBuilder) {
         Object raw = json.get(name);
         if (raw == null) {
             blockBuilder.appendNull();
@@ -57,12 +55,12 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public HttpRequest.BodyPublisher write(Block block, int position) {
+    public Optional<FormPair> toForm(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
-            return noBody();
+            return Optional.empty();
         } else if (raw instanceof String text) {
-            return ofString(name + "=" + text);
+            return Optional.of(new FormPair(name, text));
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }

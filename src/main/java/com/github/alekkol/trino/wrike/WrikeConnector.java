@@ -167,11 +167,13 @@ public class WrikeConnector implements Connector {
                     return Optional.empty();
                 } else {
                     return Optional.of(new ConstraintApplicationResult<>(
-                            new WrikeTableHandle(wrikeTableHandle.entityType(), newDomain.getDomains()
-                                    .map(domains -> domains.get(pkColumn))
-                                    .map(Domain::getSingleValue)
-                                    .map(Slice.class::cast)
-                                    .map(Slice::toStringUtf8)),
+                            new WrikeTableHandle(
+                                    wrikeTableHandle.entityType(),
+                                    newDomain.getDomains()
+                                            .map(domains -> domains.get(pkColumn))
+                                            .map(Domain::getSingleValue)
+                                            .map(Slice.class::cast)
+                                            .map(Slice::toStringUtf8)),
                             TupleDomain.withColumnDomains(otherColumnDomains),
                             false));
                 }
@@ -180,8 +182,8 @@ public class WrikeConnector implements Connector {
             @Override
             public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
-                WrikeRestColumn pkColumn = wrikeTableHandle.entityType().getPkColumn();
-                return new WrikeColumnHandle(pkColumn.metadata().getName(), false);
+                // todo implement row_id synthetic handle
+                return new WrikeColumnHandle("id", false);
             }
 
             @Override
@@ -191,6 +193,23 @@ public class WrikeConnector implements Connector {
 
             @Override
             public void finishDelete(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
+            }
+
+            @Override
+            public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns) {
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
+                // todo implement row_id synthetic handle
+                return new WrikeColumnHandle("id", false);
+            }
+
+            public ConnectorTableHandle beginUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns, RetryMode retryMode) {
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
+                return wrikeTableHandle.withUpdatedColumns(updatedColumns.stream()
+                        .map(WrikeColumnHandle.class::cast)
+                        .toList());
+            }
+
+            public void finishUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
             }
         };
     }

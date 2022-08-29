@@ -6,18 +6,14 @@ import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
 
-import java.net.URLEncoder;
-import java.net.http.HttpRequest;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.trino.spi.type.TypeUtils.writeNativeValue;
 import static io.trino.spi.type.VarcharType.VARCHAR;
-import static java.net.http.HttpRequest.BodyPublishers.noBody;
-import static java.net.http.HttpRequest.BodyPublishers.ofString;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     private static final ArrayType type = new ArrayType(VARCHAR);
@@ -48,7 +44,7 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public void read(Map<String, ?> json, BlockBuilder blockBuilder) {
+    public void toBlock(Map<String, ?> json, BlockBuilder blockBuilder) {
         Object raw = json.get(name);
         if (raw == null) {
             blockBuilder.appendNull();
@@ -64,16 +60,16 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public HttpRequest.BodyPublisher write(Block block, int position) {
+    public Optional<FormPair> toForm(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
-            return noBody();
+            return Optional.empty();
         } else if (raw instanceof Collection<?> collection) {
             String paramValue = collection.stream()
                     .map(Object::toString)
                     .map(value -> "\"" + "\"")
                     .collect(Collectors.joining(",", "[", "]"));
-            return ofString(URLEncoder.encode(paramValue, UTF_8));
+            return Optional.of(new FormPair(name, paramValue));
         } else {
             throw new IllegalStateException("Not a collection: " + raw);
         }

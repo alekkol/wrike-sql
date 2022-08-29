@@ -6,11 +6,7 @@ import io.trino.spi.block.Block;
 import io.trino.spi.connector.ConnectorPageSink;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpResponse;
-import java.util.ArrayList;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -26,19 +22,16 @@ public class WrikePageSink implements ConnectorPageSink {
 
     @Override
     public CompletableFuture<?> appendPage(Page page) {
-        ArrayList<BodyPublisher> bodyPublishers = new ArrayList<>();
+        StringBuilder body = new StringBuilder();
         for (int position = 0; position < page.getPositionCount(); position++) {
             for (int channel = 0; channel < page.getChannelCount(); channel++) {
                 Block block = page.getBlock(channel);
-                BodyPublisher bodyPublisher = entityType.getColumns().get(channel).write(block, position);
-                bodyPublishers.add(bodyPublisher);
+                WrikeRestColumn restColumn = entityType.getColumns().get(channel);
+                restColumn.toForm(block, position).ifPresent(formPair -> body.append('&').append(formPair.encode()));
             }
         }
-        BodyPublisher body = HttpRequest.BodyPublishers.concat(bodyPublishers.toArray(new BodyPublisher[0]));
         URI uri = URI.create("https://www.wrike.com/api/v4" + entityType.getBaseEndpoint());
-        future = Http.async(request -> request.POST(body)
-                .uri(uri)
-                .header("Content-Type", "application/x-www-form-urlencoded"));
+        future = Http.async(request -> request.POST(BodyPublishers.ofString(body.toString())).uri(uri).header("Content-Type", "application/x-www-form-urlencoded"));
         return future;
     }
 

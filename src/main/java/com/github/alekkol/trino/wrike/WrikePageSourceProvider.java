@@ -1,6 +1,7 @@
 package com.github.alekkol.trino.wrike;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Iterables;
 import io.airlift.slice.Slice;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
@@ -20,6 +21,7 @@ import io.trino.spi.type.Type;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +118,7 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                     for (int column = 0; column < types.size(); column++) {
                         BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(column);
                         WrikeRestColumn restColumn = wrikeRestColumns.get(column);
-                        restColumn.read(row, blockBuilder);
+                        restColumn.toBlock(row, blockBuilder);
                     }
                 }
                 completedBytes.addAndGet(pageBuilder.getSizeInBytes());
@@ -136,6 +138,27 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                     Slice slice = rowIds.getSlice(i, 0, len);
                     URI uri = URI.create("https://www.wrike.com/api/v4" + wrikeEntityType.getBaseEndpoint() + "/" + slice.toStringUtf8());
                     Http.sync(request -> request.DELETE().uri(uri));
+                }
+            }
+
+            @Override
+            public void updateRows(Page page, List<Integer> columnValueAndRowIdChannels) {
+                for (int position = 0; position < page.getPositionCount(); position++) {
+                    Block idBlock = page.getBlock(Iterables.getLast(columnValueAndRowIdChannels));
+                    Slice idSlice = idBlock.getSlice(position, 0, idBlock.getSliceLength(position));
+                    URI uri = URI.create("https://www.wrike.com/api/v4" + wrikeEntityType.getBaseEndpoint() + "/" + idSlice.toStringUtf8());
+
+                    StringBuilder body = new StringBuilder();
+                    for (int channel = 0; channel < columnValueAndRowIdChannels.size() - 1; channel++) {
+                        Block block = page.getBlock(columnValueAndRowIdChannels.get(channel));
+                        WrikeColumnHandle updatedColumn = wrikeTableHandle.updatedColumns().get(channel);
+                        WrikeRestColumn restColumn = wrikeEntityType.getColumn(updatedColumn.name());
+                        restColumn.toForm(block, position)
+                                .ifPresent(formPair -> body.append('&').append(formPair.encode()));
+                    }
+                    Http.sync(request -> request.PUT(BodyPublishers.ofString(body.toString()))
+                            .uri(uri)
+                            .header("Content-Type", "application/x-www-form-urlencoded"));
                 }
             }
 

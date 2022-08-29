@@ -8,6 +8,7 @@
 - [x] INSERT tasks (`INSERT INTO tasks(title) VALUES('hello')`)
 - [x] PUSH-down filter by `id`
 - [x] DELETE tasks (`DELETE FROM tasks WHERE id = 'QWERTY'`)
-- [ ] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
+- [x] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
+- [ ] UPDATE from previous state (`UPDATE tasks SET title = title || '!' WHERE id = 'QWERTY'`)
 - [ ] Run Trino with Wrike plugin in embedded mode
-- [ ] Read-only tables, columns (`tasks.id`)
+- [ ] Read-only tables, columns (`contacts`, ``tasks.id`, `tasks.permalink`)
