@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -54,7 +55,7 @@ public final class Http {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted", e);
         } catch (ExecutionException e) {
-            throw new IllegalStateException("Sync query failed", e.getCause());
+            throw new IllegalStateException(Objects.toString(e.getMessage(), "Query failed"), e.getCause());
         }
     }
 }

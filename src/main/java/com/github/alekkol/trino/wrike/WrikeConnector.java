@@ -71,7 +71,7 @@ public class WrikeConnector implements Connector {
             @Override
             public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName) {
                 return Stream.of(WrikeEntityType.values())
-                        .map(entityType -> new SchemaTableName(SCHEMA, entityType.name()))
+                        .map(entityType -> new SchemaTableName(SCHEMA, entityType.getTableName()))
                         .toList();
             }
 

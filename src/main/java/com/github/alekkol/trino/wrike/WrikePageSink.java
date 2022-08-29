@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class WrikePageSink implements ConnectorPageSink {
     private final WrikeEntityType entityType;
-    private CompletableFuture<?> future;
+    private CompletableFuture<String> future;
 
     public WrikePageSink(WrikeEntityType entityType) {
         this.entityType = Objects.requireNonNull(entityType);
@@ -30,14 +30,13 @@ public class WrikePageSink implements ConnectorPageSink {
                 restColumn.toForm(block, position).ifPresent(formPair -> body.append('&').append(formPair.encode()));
             }
         }
-        URI uri = URI.create("https://www.wrike.com/api/v4" + entityType.getBaseEndpoint());
-        future = Http.async(request -> request.POST(BodyPublishers.ofString(body.toString())).uri(uri).header("Content-Type", "application/x-www-form-urlencoded"));
-        return future;
+        URI uri = URI.create("https://www.wrike.com/api/v4" + entityType.getInsertEndpoint());
+        return future = Http.async(request -> request.POST(BodyPublishers.ofString(body.toString())).uri(uri).header("Content-Type", "application/x-www-form-urlencoded"));
     }
 
     @Override
     public CompletableFuture<Collection<Slice>> finish() {
-        return CompletableFuture.completedFuture(List.of());
+        return future.thenCompose(response -> CompletableFuture.completedFuture(List.of()));
     }
 
     @Override
