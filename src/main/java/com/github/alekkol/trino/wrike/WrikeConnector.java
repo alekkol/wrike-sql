@@ -150,7 +150,9 @@ public class WrikeConnector implements Connector {
                 Map<ColumnHandle, Domain> pkColumnDomains = new LinkedHashMap<>();
                 Map<ColumnHandle, Domain> otherColumnDomains = new LinkedHashMap<>();
                 columnHandleToDomainMap.forEach((columnHandle, domain) -> {
-                    // push down filter by PK with single value (e.g. id = 'QWERTY')
+                    // push down filter by PK with one or several values
+                    //     id = 'QWERTY'
+                    //     id IN ('QWERTY', 'DVORAK')
                     if (columnHandle instanceof WrikeColumnHandle wrikeColumnHandle
                             && wrikeColumnHandle.primaryKey()) {
                         pkColumnDomains.put(columnHandle, domain);
