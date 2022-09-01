@@ -20,7 +20,7 @@ import io.trino.spi.connector.UpdatablePageSource;
 import io.trino.spi.type.Type;
 
 import java.io.IOException;
-import java.net.URI;
+import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Collection;
 import java.util.List;
@@ -87,17 +87,15 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                 }
 
                 final StringBuilder uriBuilder = new StringBuilder();
-                uriBuilder.append("https://www.wrike.com/api/v4");
                 if (nextPageMark.token() != null) {
-                    uriBuilder.append("?nextPageToken=").append(nextPageMark.token());
+                    uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("?nextPageToken=").append(nextPageMark.token());
                 } else {
                     wrikeTableHandle.id().ifPresentOrElse(
                             id -> uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("/").append(id),
                             () -> uriBuilder.append(wrikeEntityType.getSelectAllEndpoint()));
                 }
-                URI uri = URI.create(uriBuilder.toString());
 
-                String response = Http.sync(request -> request.GET().uri(uri));
+                String response = Http.sync(uriBuilder.toString(), HttpRequest.Builder::GET);
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, Object> result;
                 try {
@@ -136,8 +134,8 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                 for (int i = 0; i < rowIds.getPositionCount(); i++) {
                     int len = rowIds.getSliceLength(i);
                     Slice slice = rowIds.getSlice(i, 0, len);
-                    URI uri = URI.create("https://www.wrike.com/api/v4" + wrikeEntityType.getBaseEndpoint() + "/" + slice.toStringUtf8());
-                    Http.sync(request -> request.DELETE().uri(uri));
+                    String uri = wrikeEntityType.getBaseEndpoint() + "/" + slice.toStringUtf8();
+                    Http.sync(uri, HttpRequest.Builder::DELETE);
                 }
             }
 
@@ -146,7 +144,7 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                 for (int position = 0; position < page.getPositionCount(); position++) {
                     Block idBlock = page.getBlock(Iterables.getLast(columnValueAndRowIdChannels));
                     Slice idSlice = idBlock.getSlice(position, 0, idBlock.getSliceLength(position));
-                    URI uri = URI.create("https://www.wrike.com/api/v4" + wrikeEntityType.getBaseEndpoint() + "/" + idSlice.toStringUtf8());
+                    String uri = wrikeEntityType.getBaseEndpoint() + "/" + idSlice.toStringUtf8();
 
                     StringBuilder body = new StringBuilder();
                     for (int channel = 0; channel < columnValueAndRowIdChannels.size() - 1; channel++) {
@@ -154,10 +152,14 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                         WrikeColumnHandle updatedColumn = wrikeTableHandle.updatedColumns().get(channel);
                         WrikeRestColumn restColumn = wrikeEntityType.getColumn(updatedColumn.name());
                         restColumn.toForm(block, position)
-                                .ifPresent(formPair -> body.append('&').append(formPair.encodedValue()));
+                                .ifPresent(formPair -> body
+                                        .append('&')
+                                        .append(formPair.parameter())
+                                        .append('=')
+                                        .append(formPair.encodedValue()));
                     }
-                    Http.sync(request -> request.PUT(BodyPublishers.ofString(body.toString()))
-                            .uri(uri)
+                    Http.sync(uri, request -> request
+                            .PUT(BodyPublishers.ofString(body.toString()))
                             .header("Content-Type", "application/x-www-form-urlencoded"));
                 }
             }

@@ -49,12 +49,10 @@ public class WrikePageSink implements ConnectorPageSink {
             }
         }
         regexMatcher.appendTail(insertEndpoint);
-        URI uri = URI.create("https://www.wrike.com/api/v4" + insertEndpoint);
 
         String body = Joiner.on("&").withKeyValueSeparator('=').join(columnToFormField);
-        return future = Http.async(request -> request
+        return future = Http.async(insertEndpoint, request -> request
                 .POST(BodyPublishers.ofString(body))
-                .uri(uri)
                 .header("Content-Type", "application/x-www-form-urlencoded"));
     }
 

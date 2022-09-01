@@ -26,5 +26,5 @@ This prototype is based on the [Trino](https://trino.io) project and actually ho
 - [x] DELETE tasks (`DELETE FROM tasks WHERE id = 'QWERTY'`)
 - [x] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
 - [ ] UPDATE from previous state (`UPDATE tasks SET title = title || '!' WHERE id = 'QWERTY'`)
-- [ ] Run Trino with Wrike plugin in embedded mode
+- [x] Run Trino with Wrike plugin in embedded mode
 - [ ] Read-only tables, columns (`contacts`, ``tasks.id`, `tasks.permalink`)
