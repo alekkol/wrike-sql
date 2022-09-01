@@ -3,6 +3,7 @@ package com.github.alekkol.trino.wrike;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.github.alekkol.trino.wrike.WrikeBooleanRestColumn.bool;
 import static com.github.alekkol.trino.wrike.WrikeTextArrayRestColumn.textArray;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.primaryKey;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.text;
@@ -10,15 +11,24 @@ import static com.github.alekkol.trino.wrike.WrikeTimestampRestColumn.timestamp;
 
 public enum WrikeEntityType {
     TASK("tasks",
-            "/tasks?fields=%5B%22responsibleIds%22%5D",
+            "/tasks?fields=%5B%22responsibleIds%22%2C%22authorIds%22%2C%22superTaskIds%22%2C%22subTaskIds%22%5D",
             "/tasks",
             List.of(primaryKey("id"), text("title"),
                     text("status"), timestamp("createdDate"),
-                    textArray("responsibleIds"), text("permalink"))),
+                    textArray("authorIds"), textArray("responsibleIds"),
+                    textArray("superTaskIds"), textArray("subTaskIds"),
+                    text("permalink"))),
+    FOLDER("folders",
+            "/folders",
+            "/folders",
+            List.of(primaryKey("id"), text("title"),
+                    text("scope"), textArray("childIds"))),
     CONTACT("contacts",
             "/contacts",
             "/contacts",
-            List.of(primaryKey("id"), text("firstName"), text("lastName"), text("type"))),
+            List.of(primaryKey("id"),
+                    text("firstName"), text("lastName"),
+                    bool("deleted"), text("type"))),
     COMMENT("comments",
             "/comments",
             "/tasks/${taskId}/comments",
