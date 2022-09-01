@@ -4,11 +4,15 @@ import io.trino.Session;
 import io.trino.testing.AbstractTestQueryFramework;
 import io.trino.testing.DistributedQueryRunner;
 import io.trino.testing.QueryRunner;
+import org.intellij.lang.annotations.Language;
 import org.testng.annotations.Test;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static io.trino.testing.TestingSession.testSessionBuilder;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestWrikeConnector extends AbstractTestQueryFramework {
@@ -57,6 +61,20 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
                 .toString();
         assertThat(computeActual("SELECT id FROM wrike.rest.tasks WHERE id = '%s'".formatted(taskId)).getOnlyValue())
                 .isEqualTo(taskId);
+    }
+
+    @Test
+    public void testSelectTaskByIds() {
+        Set<Object> taskIds = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks LIMIT 3")
+                .getOnlyColumnAsSet();
+        @Language("SQL")
+        String sql = "SELECT id FROM wrike.rest.tasks WHERE id IN (%s)"
+                .formatted(taskIds.stream()
+                        .map(Objects::toString)
+                        .map(id -> "'" + id + "'")
+                        .collect(joining(",")));
+        assertThat(computeActual(sql).getOnlyColumnAsSet())
+                .isEqualTo(taskIds);
     }
 
     @Test

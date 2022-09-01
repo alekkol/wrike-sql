@@ -11,22 +11,22 @@ import static java.util.Objects.requireNonNull;
 
 public record WrikeTableHandle(WrikeEntityType entityType,
                                List<WrikeColumnHandle> updatedColumns,
-                               Optional<String> id) implements ConnectorTableHandle {
+                               Optional<List<String>> ids) implements ConnectorTableHandle {
     @JsonCreator
     public WrikeTableHandle(@JsonProperty("entityType") WrikeEntityType entityType,
                             @JsonProperty("updatedColumns") List<WrikeColumnHandle> updatedColumns,
-                            @JsonProperty("id") Optional<String> id) {
+                            @JsonProperty("ids") Optional<List<String>> ids) {
         this.entityType = requireNonNull(entityType);
         this.updatedColumns = requireNonNull(updatedColumns);
-        this.id = requireNonNull(id);
+        this.ids = requireNonNull(ids);
     }
 
-    public WrikeTableHandle(WrikeEntityType entityType, Optional<String> id) {
-        this(entityType, List.of(), id);
+    public WrikeTableHandle(WrikeEntityType entityType, Optional<List<String>> ids) {
+        this(entityType, List.of(), ids);
     }
 
     public WrikeTableHandle withUpdatedColumns(List<WrikeColumnHandle> updatedColumns) {
-        return new WrikeTableHandle(entityType, updatedColumns, id);
+        return new WrikeTableHandle(entityType, updatedColumns, ids);
     }
 
     @Override
@@ -42,8 +42,8 @@ public record WrikeTableHandle(WrikeEntityType entityType,
     }
 
     @Override
-    @JsonProperty("id")
-    public Optional<String> id() {
-        return id;
+    @JsonProperty("ids")
+    public Optional<List<String>> ids() {
+        return ids;
     }
 }

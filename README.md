@@ -24,10 +24,9 @@ This prototype is based on the [Trino](https://trino.io) project and actually ho
 - [x] API Pagination support
 - [x] JOIN support
 - [x] INSERT tasks (`INSERT INTO tasks(title) VALUES('hello')`)
-- [x] PUSH-down filter by `id`
+- [x] PUSH-down filter by one or multiple `id` column values
 - [x] DELETE tasks (`DELETE FROM tasks WHERE id = 'QWERTY'`)
 - [x] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
 - [x] UPDATE from previous state (`UPDATE tasks SET title = title || '!' WHERE id = 'QWERTY'`)
 - [x] Run Trino with Wrike plugin in embedded mode
-- [ ] Push down filter by multiple ids
 - [ ] Read-only tables, columns (`contacts`, ``tasks.id`, `tasks.permalink`)

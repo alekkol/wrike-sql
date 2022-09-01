@@ -97,8 +97,8 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                 if (nextPageMark.token() != null) {
                     uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("?nextPageToken=").append(nextPageMark.token());
                 } else {
-                    wrikeTableHandle.id().ifPresentOrElse(
-                            id -> uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("/").append(id),
+                    wrikeTableHandle.ids().ifPresentOrElse(
+                            ids -> uriBuilder.append(wrikeEntityType.getBaseEndpoint()).append("/").append(String.join(",", ids)),
                             () -> uriBuilder.append(wrikeEntityType.getSelectAllEndpoint()));
                 }
 

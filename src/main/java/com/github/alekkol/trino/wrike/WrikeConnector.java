@@ -5,6 +5,7 @@ import io.trino.spi.NodeManager;
 import io.trino.spi.connector.*;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.predicate.ValueSet;
 import io.trino.spi.statistics.ComputedStatistics;
 import io.trino.spi.transaction.IsolationLevel;
 
@@ -151,8 +152,7 @@ public class WrikeConnector implements Connector {
                 columnHandleToDomainMap.forEach((columnHandle, domain) -> {
                     // push down filter by PK with single value (e.g. id = 'QWERTY')
                     if (columnHandle instanceof WrikeColumnHandle wrikeColumnHandle
-                            && wrikeColumnHandle.primaryKey()
-                            && domain.isSingleValue()) {
+                            && wrikeColumnHandle.primaryKey()) {
                         pkColumnDomains.put(columnHandle, domain);
                     } else {
                         otherColumnDomains.put(columnHandle, domain);
@@ -161,10 +161,10 @@ public class WrikeConnector implements Connector {
 
                 ColumnMetadata pkMetadata = wrikeTableHandle.entityType().getPkColumn().metadata();
                 WrikeColumnHandle pkColumn = new WrikeColumnHandle(pkMetadata.getName(), true);
-                TupleDomain<ColumnHandle> oldDomain = wrikeTableHandle.id()
-                        .map(id -> TupleDomain.withColumnDomains(Map.of(
+                TupleDomain<ColumnHandle> oldDomain = wrikeTableHandle.ids()
+                        .map(ids -> TupleDomain.withColumnDomains(Map.of(
                                 (ColumnHandle) pkColumn,
-                                Domain.singleValue(pkMetadata.getType(), id))))
+                                Domain.multipleValues(pkMetadata.getType(), ids))))
                         .orElse(TupleDomain.all());
                 TupleDomain<ColumnHandle> newDomain = oldDomain.intersect(TupleDomain.withColumnDomains(pkColumnDomains));
 
@@ -176,9 +176,12 @@ public class WrikeConnector implements Connector {
                                     wrikeTableHandle.entityType(),
                                     newDomain.getDomains()
                                             .map(domains -> domains.get(pkColumn))
-                                            .map(Domain::getSingleValue)
-                                            .map(Slice.class::cast)
-                                            .map(Slice::toStringUtf8)),
+                                            .map(Domain::getValues)
+                                            .map(ValueSet::getDiscreteSet)
+                                            .map(discreteSet -> discreteSet.stream()
+                                                    .map(Slice.class::cast)
+                                                    .map(Slice::toStringUtf8)
+                                                    .toList())),
                             TupleDomain.withColumnDomains(otherColumnDomains),
                             false));
                 }
