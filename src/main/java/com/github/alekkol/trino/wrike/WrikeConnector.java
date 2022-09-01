@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static io.trino.spi.type.VarcharType.VARCHAR;
 import static java.util.stream.Collectors.toMap;
 
 public class WrikeConnector implements Connector {
@@ -121,7 +122,11 @@ public class WrikeConnector implements Connector {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
                 WrikeColumnHandle wrikeColumnHandle = (WrikeColumnHandle) columnHandle;
 
-                return wrikeTableHandle.entityType().getColumn(wrikeColumnHandle.name()).metadata();
+                if (wrikeColumnHandle.isRowId()) {
+                    return new ColumnMetadata(wrikeColumnHandle.name(), VARCHAR);
+                } else {
+                    return wrikeTableHandle.entityType().getColumn(wrikeColumnHandle.name()).metadata();
+                }
             }
 
             @Override
@@ -181,9 +186,7 @@ public class WrikeConnector implements Connector {
 
             @Override
             public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
-                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
-                // todo implement row_id synthetic handle
-                return new WrikeColumnHandle("id", false);
+                return WrikeColumnHandle.rowId();
             }
 
             @Override
@@ -197,9 +200,7 @@ public class WrikeConnector implements Connector {
 
             @Override
             public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns) {
-                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
-                // todo implement row_id synthetic handle
-                return new WrikeColumnHandle("id", false);
+                return WrikeColumnHandle.rowId();
             }
 
             public ConnectorTableHandle beginUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns, RetryMode retryMode) {

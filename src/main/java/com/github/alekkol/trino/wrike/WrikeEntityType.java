@@ -1,6 +1,10 @@
 package com.github.alekkol.trino.wrike;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.alekkol.trino.wrike.WrikeBooleanRestColumn.bool;
@@ -8,6 +12,7 @@ import static com.github.alekkol.trino.wrike.WrikeTextArrayRestColumn.textArray;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.primaryKey;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.text;
 import static com.github.alekkol.trino.wrike.WrikeTimestampRestColumn.timestamp;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 public enum WrikeEntityType {
     TASK("tasks",
@@ -41,14 +46,15 @@ public enum WrikeEntityType {
     private final String selectAllEndpoint;
     private final String insertEndpoint;
     private final String baseEndpoint;
-    private final List<WrikeRestColumn> columns;
+    private final ImmutableMap<String, WrikeRestColumn> columns;
 
     WrikeEntityType(String tableName, String selectAllEndpoint, String insertEndpoint, String baseEndpoint, List<WrikeRestColumn> columns) {
         this.tableName = tableName;
         this.selectAllEndpoint = selectAllEndpoint;
         this.insertEndpoint = insertEndpoint;
         this.baseEndpoint = baseEndpoint;
-        this.columns = columns;
+        this.columns = columns.stream()
+                .collect(toImmutableMap(column -> column.metadata().getName().toLowerCase(), Function.identity()));
     }
 
     WrikeEntityType(String tableName, String selectAllEndpoint, String baseEndpoint, List<WrikeRestColumn> columns) {
@@ -78,22 +84,22 @@ public enum WrikeEntityType {
         return baseEndpoint;
     }
 
-    public List<WrikeRestColumn> getColumns() {
-        return columns;
+    public Collection<WrikeRestColumn> getColumns() {
+        return columns.values();
     }
 
     public WrikeRestColumn getPkColumn() {
-        return columns.stream()
+        return getColumns().stream()
                 .filter(WrikeRestColumn::isPrimaryKey)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("No PK for entity type: " + this));
     }
 
     public WrikeRestColumn getColumn(String name) {
-        return columns.stream()
-                .filter(column -> name.equalsIgnoreCase(column.metadata().getName()))
-                .findAny()
-                .orElseThrow(() -> new IllegalStateException("No '%s' column in table '%s'"
-                        .formatted(name, tableName)));
+        WrikeRestColumn found = columns.get(name.toLowerCase());
+        if (found == null) {
+            throw new IllegalStateException("No '%s' column in table '%s'".formatted(name, tableName));
+        }
+        return found;
     }
 }

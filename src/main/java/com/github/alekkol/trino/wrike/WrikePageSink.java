@@ -28,11 +28,12 @@ public class WrikePageSink implements ConnectorPageSink {
 
     @Override
     public CompletableFuture<?> appendPage(Page page) {
+        List<WrikeRestColumn> columns = List.copyOf(entityType.getColumns());
         var columnToFormField = new HashMap<String, String>();
         for (int position = 0; position < page.getPositionCount(); position++) {
             for (int channel = 0; channel < page.getChannelCount(); channel++) {
                 Block block = page.getBlock(channel);
-                WrikeRestColumn restColumn = entityType.getColumns().get(channel);
+                WrikeRestColumn restColumn = columns.get(channel);
                 restColumn.toForm(block, position)
                         .ifPresent(formField -> columnToFormField.put(formField.parameter(), formField.encodedValue()));
             }

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -41,10 +42,16 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                                                 DynamicFilter dynamicFilter) {
         WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) table;
         WrikeEntityType wrikeEntityType = wrikeTableHandle.entityType();
-        List<WrikeRestColumn> wrikeRestColumns = columns.stream()
+        List<WrikeRestColumn> wrikeRestColumns = Stream
+                .concat(columns.stream(), wrikeTableHandle.updatedColumns().stream())
                 .map(WrikeColumnHandle.class::cast)
-                .map(WrikeColumnHandle::name)
-                .map(wrikeEntityType::getColumn)
+                .map(column -> {
+                    if (column.isRowId()) {
+                        return wrikeEntityType.getPkColumn();
+                    } else {
+                        return wrikeEntityType.getColumn(column.name());
+                    }
+                })
                 .toList();
         List<Type> types = wrikeRestColumns.stream()
                 .map(WrikeRestColumn::metadata)
