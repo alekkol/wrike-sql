@@ -18,7 +18,7 @@ public enum WrikeEntityType {
     CONTACT("contacts",
             "/contacts",
             "/contacts",
-            List.of(primaryKey("id"), text("firstName"), text("lastName"))),
+            List.of(primaryKey("id"), text("firstName"), text("lastName"), text("type"))),
     COMMENT("comments",
             "/comments",
             "/tasks/${taskId}/comments",

@@ -60,7 +60,7 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public Optional<FormPair> toForm(Block block, int position) {
+    public Optional<FormField> toForm(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
             return Optional.empty();
@@ -69,7 +69,7 @@ public class WrikeTextArrayRestColumn implements WrikeRestColumn {
                     .map(Object::toString)
                     .map(value -> "\"" + "\"")
                     .collect(Collectors.joining(",", "[", "]"));
-            return Optional.of(new FormPair(name, paramValue));
+            return Optional.of(new FormField(name, paramValue));
         } else {
             throw new IllegalStateException("Not a collection: " + raw);
         }

@@ -55,12 +55,12 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
     }
 
     @Override
-    public Optional<FormPair> toForm(Block block, int position) {
+    public Optional<FormField> toForm(Block block, int position) {
         Object raw = type.getObjectValue(null, block, position);
         if (raw == null) {
             return Optional.empty();
         } else if (raw instanceof String text) {
-            return Optional.of(new FormPair(name, text));
+            return Optional.of(new FormField(name, text));
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }

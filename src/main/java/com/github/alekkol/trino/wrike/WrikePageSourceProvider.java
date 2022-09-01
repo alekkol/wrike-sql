@@ -154,7 +154,7 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                         WrikeColumnHandle updatedColumn = wrikeTableHandle.updatedColumns().get(channel);
                         WrikeRestColumn restColumn = wrikeEntityType.getColumn(updatedColumn.name());
                         restColumn.toForm(block, position)
-                                .ifPresent(formPair -> body.append('&').append(formPair.encode()));
+                                .ifPresent(formPair -> body.append('&').append(formPair.encodedValue()));
                     }
                     Http.sync(request -> request.PUT(BodyPublishers.ofString(body.toString()))
                             .uri(uri)

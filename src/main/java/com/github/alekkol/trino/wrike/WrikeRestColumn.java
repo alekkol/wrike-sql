@@ -11,9 +11,9 @@ import java.util.Optional;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public interface WrikeRestColumn {
-    record FormPair(String parameter, String value) {
-        public String encode() {
-            return parameter + "=" + URLEncoder.encode(value, UTF_8);
+    record FormField(String parameter, String value) {
+        public String encodedValue() {
+            return URLEncoder.encode(value, UTF_8);
         }
     }
 
@@ -23,5 +23,5 @@ public interface WrikeRestColumn {
 
     void toBlock(Map<String, ?> json, BlockBuilder blockBuilder);
 
-    Optional<FormPair> toForm(Block block, int position);
+    Optional<FormField> toForm(Block block, int position);
 }

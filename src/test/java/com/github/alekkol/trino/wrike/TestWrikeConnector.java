@@ -80,6 +80,16 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
     }
 
     @Test
+    public void testInsertComment() {
+        assertQuerySucceeds("INSERT INTO wrike.rest.tasks(title) VALUES('to be updated')");
+        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks ORDER BY createddate DESC LIMIT 1")
+                .getOnlyValue()
+                .toString();
+        assertQuerySucceeds("INSERT INTO wrike.rest.comments(taskId, text) VALUES('%s', 'hello from test')"
+                .formatted(taskId));
+    }
+
+    @Test
     public void testUpdateTask() {
         assertQuerySucceeds("INSERT INTO wrike.rest.tasks(title) VALUES('to be updated')");
         String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks ORDER BY createddate DESC LIMIT 1")
