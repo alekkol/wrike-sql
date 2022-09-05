@@ -20,7 +20,12 @@ The demonstration is how to build domain-specific "query engine" with just ~1k L
 # Examples
 <details>
   <summary>Schema inspection</summary>
-    <img src="https://github.com/alekkol/wrike-sql/raw/main/examples/create_connection.gif" alt="Schema inspection"></img>
+    <img src="https://github.com/alekkol/wrike-sql/raw/main/examples/create_connection.gif" alt="Schema inspection">
+</details>
+
+<details>
+  <summary>Data manipulation using SQL</summary>
+    <img src="https://github.com/alekkol/wrike-sql/raw/main/examples/data_manipulation.gif" alt="Schema inspection">
 </details>
 
 # Scope of prototype
