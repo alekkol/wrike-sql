@@ -90,13 +90,12 @@ This project is a domain-specific "query engine" with just ~1k LoC which contain
 
 # Scope of prototype
 - [x] Schema introspection (`SHOW SCHEMAS`, `SHOW TABLES`, `SHOW COLUMNS`)
-- [x] Query tasks, contacts with batches
+- [x] Query tasks, folders, contacts, comments with batches
 - [x] API Pagination support
 - [x] JOIN support
-- [x] INSERT tasks (`INSERT INTO tasks(title) VALUES('hello')`)
-- [x] PUSH-down filter by one or multiple `id` column values
-- [x] DELETE tasks (`DELETE FROM tasks WHERE id = 'QWERTY'`)
-- [x] UPDATE tasks (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
+- [x] INSERT support (`INSERT INTO tasks(title) VALUES('hello')`)
+- [x] PUSH-down static filter by primary key
+- [x] DELETE support (`DELETE FROM tasks WHERE id = 'QWERTY'`)
+- [x] UPDATE support (`UPDATE tasks SET title = 'new title' WHERE id = 'QWERTY'`)
 - [x] UPDATE from previous state (`UPDATE tasks SET title = title || '!' WHERE id = 'QWERTY'`)
 - [x] Run Trino with Wrike plugin in embedded mode
-- [ ] Read-only tables, columns (`contacts`, ``tasks.id`, `tasks.permalink`)
