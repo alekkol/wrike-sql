@@ -132,4 +132,17 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
                 .toString();
         assertQuerySucceeds("DELETE FROM wrike.rest.tasks WHERE id = '%s'".formatted(taskId));
     }
+
+    @Test
+    public void testDynamicIdsPushdown() {
+        assertQuerySucceeds("""
+                SELECT title
+                FROM wrike.rest.folders
+                WHERE id IN (
+                  SELECT t.childid
+                  FROM wrike.rest.folders root
+                  JOIN UNNEST(root.childids) AS t(childid) ON TRUE
+                  WHERE root.scope = 'WsRoot')
+                """);
+    }
 }

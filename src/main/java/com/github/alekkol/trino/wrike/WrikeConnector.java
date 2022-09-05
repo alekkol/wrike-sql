@@ -6,7 +6,10 @@ import io.trino.spi.connector.*;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.predicate.ValueSet;
+import io.trino.spi.statistics.ColumnStatistics;
 import io.trino.spi.statistics.ComputedStatistics;
+import io.trino.spi.statistics.Estimate;
+import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.transaction.IsolationLevel;
 
 import java.util.Collection;
@@ -143,7 +146,9 @@ public class WrikeConnector implements Connector {
             }
 
             @Override
-            public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
+            public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(ConnectorSession session,
+                                                                                           ConnectorTableHandle handle,
+                                                                                           Constraint constraint) {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) handle;
 
                 Map<ColumnHandle, Domain> columnHandleToDomainMap = constraint.getSummary().getDomains().orElseThrow();
@@ -216,6 +221,19 @@ public class WrikeConnector implements Connector {
             }
 
             public void finishUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
+            }
+
+            public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
+                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
+                WrikeRestColumn pkColumn = wrikeTableHandle.entityType().getPkColumn();
+                WrikeColumnHandle pkColumnHandle = new WrikeColumnHandle(pkColumn.metadata().getName(), pkColumn.isPrimaryKey());
+                return new TableStatistics.Builder()
+                        .setRowCount(Estimate.unknown())
+                        .setColumnStatistics(pkColumnHandle, ColumnStatistics.builder()
+                                .setNullsFraction(Estimate.zero())
+                                .setDistinctValuesCount(Estimate.of(Math.pow(2, 31)))
+                                .build())
+                        .build();
             }
         };
     }
