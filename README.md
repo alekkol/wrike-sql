@@ -1,6 +1,7 @@
 # Wrike SQL
 Proof of concept of full-scale SQL over [Wrike REST API](https://developers.wrike.com).
 This prototype is based on the [Trino](https://trino.io) project and actually holds a custom implementation of Trino's connector.
+The demonstration is how to build domain-specific "query engine" with just ~1k LoC.
 
 # Why
 1. Build a bridge between REST endpoints/models and SQL API.
@@ -17,6 +18,10 @@ This prototype is based on the [Trino](https://trino.io) project and actually ho
 4. Connect to `jdbc:trino://127.0.0.1:${PORT}`
 
 # Examples
+<details>
+  <summary>Schema inspection</summary>
+    <img src="https://github.com/alekkol/wrike-sql/raw/main/examples/create_connection.gif" alt="Schema inspection"></img>
+</details>
 
 # Scope of prototype
 - [x] Schema introspection (`SHOW SCHEMAS`, `SHOW TABLES`, `SHOW COLUMNS`)
