@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.github.alekkol.trino.wrike.WrikeBooleanRestColumn.bool;
+import static com.github.alekkol.trino.wrike.WrikeNestedTextArrayRestColumn.nestedTextArray;
 import static com.github.alekkol.trino.wrike.WrikeTextArrayRestColumn.textArray;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.primaryKey;
 import static com.github.alekkol.trino.wrike.WrikeTextRestColumn.text;
@@ -19,17 +20,16 @@ public enum WrikeEntityType {
             "/tasks?fields=%5B%22responsibleIds%22%2C%22authorIds%22%2C%22superTaskIds%22%2C%22subTaskIds%22%5D",
             "/tasks",
             List.of(primaryKey("id"), text("title"),
-                    text("status"), timestamp("createdDate"),
+                    text("status"), text("customStatus", "customStatusId"),
+                    timestamp("createdDate"), timestamp("updatedDate"),
                     textArray("authorIds"), textArray("responsibleIds"),
                     textArray("superTaskIds"), textArray("subTaskIds"),
                     text("permalink"))),
     FOLDER("folders",
             "/folders",
-            "/folders",
             List.of(primaryKey("id"), text("title"),
                     text("scope"), textArray("childIds"))),
     CONTACT("contacts",
-            "/contacts",
             "/contacts",
             List.of(primaryKey("id"),
                     text("firstName"), text("lastName"),
@@ -40,7 +40,17 @@ public enum WrikeEntityType {
             "/comments",
             List.of(primaryKey("id"), text("authorId"),
                     text("text"), timestamp("createdDate"),
-                    text("taskId")));
+                    text("taskId"))),
+    WORKFLOW("workflows",
+            "/workflows",
+            "/workflows",
+            List.of(primaryKey("id"), text("name"),
+                    bool("standard"), text("group"),
+                    nestedTextArray("customStatusIds", "customStatuses", "id"))),
+    CUSTOM_STATUS("custom_statuses",
+            "/customstatuses",
+            List.of(primaryKey("id"), text("name"),
+                    bool("standard"), text("group")));
 
     private final String tableName;
     private final String selectAllEndpoint;
@@ -59,6 +69,10 @@ public enum WrikeEntityType {
 
     WrikeEntityType(String tableName, String selectAllEndpoint, String baseEndpoint, List<WrikeRestColumn> columns) {
         this(tableName, selectAllEndpoint, baseEndpoint, baseEndpoint, columns);
+    }
+
+    WrikeEntityType(String tableName, String endpoint, List<WrikeRestColumn> columns) {
+        this(tableName, endpoint, endpoint, endpoint, columns);
     }
 
     public static WrikeEntityType fromTableName(String tableName) {

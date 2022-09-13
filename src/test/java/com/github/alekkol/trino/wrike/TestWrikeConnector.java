@@ -7,6 +7,7 @@ import io.trino.testing.QueryRunner;
 import org.intellij.lang.annotations.Language;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -84,6 +85,20 @@ public class TestWrikeConnector extends AbstractTestQueryFramework {
                 .toString();
         assertThat(computeActual("SELECT id FROM wrike.rest.contacts WHERE id = '%s'".formatted(contactId)).getOnlyValue())
                 .isEqualTo(contactId);
+    }
+
+    @Test
+    public void testUpdateTaskCustomStatusId() {
+        @SuppressWarnings("unchecked")
+        List<String> customStatusIds = (List<String>) getQueryRunner().execute("SELECT customStatusIds FROM wrike.rest.workflows LIMIT 1")
+                .getOnlyValue();
+        String customStatusId = customStatusIds.get(0);
+        assertQuerySucceeds("INSERT INTO wrike.rest.tasks(title) VALUES('custom status to be updated')");
+        String taskId = getQueryRunner().execute("SELECT id FROM wrike.rest.tasks ORDER BY createddate DESC LIMIT 1")
+                .getOnlyValue()
+                .toString();
+        assertQuerySucceeds("UPDATE wrike.rest.tasks SET customstatusid = '%s' WHERE id = '%s'"
+                .formatted(customStatusId, taskId));
     }
 
     @Test

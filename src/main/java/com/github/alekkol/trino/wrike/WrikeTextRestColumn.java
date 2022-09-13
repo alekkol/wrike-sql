@@ -16,14 +16,16 @@ import static io.trino.spi.type.VarcharType.VARCHAR;
 public class WrikeTextRestColumn implements WrikeRestColumn {
     private static final VarcharType type = VARCHAR;
 
-    private final String name;
+    private final String requestColumn;
+    private final String responseColumn;
     private final boolean primaryKey;
     private final ColumnMetadata metadata;
 
-    private WrikeTextRestColumn(String name, boolean primaryKey) {
-        this.name = Objects.requireNonNull(name);
+    private WrikeTextRestColumn(String requestColumn, String responseColumn, boolean primaryKey) {
+        this.requestColumn = Objects.requireNonNull(requestColumn);
+        this.responseColumn = Objects.requireNonNull(responseColumn);
         this.metadata = ColumnMetadata.builder()
-                .setName(name)
+                .setName(responseColumn)
                 .setType(type)
                 .setNullable(true)
                 .build();
@@ -31,11 +33,15 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
     }
 
     public static WrikeTextRestColumn primaryKey(String name) {
-        return new WrikeTextRestColumn(name, true);
+        return new WrikeTextRestColumn(name, name, true);
     }
 
     public static WrikeTextRestColumn text(String name) {
-        return new WrikeTextRestColumn(name, false);
+        return new WrikeTextRestColumn(name, name, false);
+    }
+
+    public static WrikeTextRestColumn text(String requestColumn, String responseColumn) {
+        return new WrikeTextRestColumn(requestColumn, responseColumn, false);
     }
 
     @Override
@@ -50,7 +56,7 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
 
     @Override
     public void toBlock(Map<String, ?> json, BlockBuilder blockBuilder) {
-        Object raw = json.get(name);
+        Object raw = json.get(responseColumn);
         if (raw == null) {
             blockBuilder.appendNull();
         } else if (raw instanceof String text) {
@@ -66,7 +72,7 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
         if (raw == null) {
             return Optional.empty();
         } else if (raw instanceof String text) {
-            return Optional.of(new FormField(name, text));
+            return Optional.of(new FormField(requestColumn, text));
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }
