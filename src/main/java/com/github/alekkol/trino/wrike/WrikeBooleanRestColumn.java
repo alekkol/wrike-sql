@@ -41,6 +41,11 @@ public class WrikeBooleanRestColumn implements WrikeRestColumn {
     }
 
     @Override
+    public boolean isWritable() {
+        return false;
+    }
+
+    @Override
     public void toBlock(Map<String, ?> json, BlockBuilder blockBuilder) {
         Object raw = json.get(name);
         if (raw == null) {

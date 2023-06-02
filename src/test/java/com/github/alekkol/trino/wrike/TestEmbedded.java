@@ -44,7 +44,7 @@ public class TestEmbedded extends AbstractTestQueryFramework {
 
         queryRunner.createCatalog(
                 "wrike",
-                "wrike-rest",
+                "wrike_rest",
                 Map.of());
 
         return queryRunner;

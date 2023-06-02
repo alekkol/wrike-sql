@@ -19,37 +19,37 @@ public enum WrikeEntityType {
     TASK("tasks",
             "/tasks?fields=%5B%22responsibleIds%22%2C%22authorIds%22%2C%22superTaskIds%22%2C%22subTaskIds%22%5D",
             "/tasks",
-            List.of(primaryKey("id"), text("title"),
-                    text("status"), text("customStatus", "customStatusId"),
+            List.of(primaryKey("id"), text("title").writable(),
+                    text("status").writable(), text("customStatus", "customStatusId"),
                     timestamp("createdDate"), timestamp("updatedDate"),
                     textArray("authorIds"), textArray("responsibleIds"),
                     textArray("superTaskIds"), textArray("subTaskIds"),
                     text("permalink"))),
     FOLDER("folders",
             "/folders",
-            List.of(primaryKey("id"), text("title"),
+            List.of(primaryKey("id"), text("title").writable(),
                     text("scope"), textArray("childIds"))),
     CONTACT("contacts",
             "/contacts",
             List.of(primaryKey("id"),
-                    text("firstName"), text("lastName"),
+                    text("firstName").writable(), text("lastName").writable(),
                     bool("deleted"), text("type"))),
     COMMENT("comments",
             "/comments",
             "/tasks/${taskId}/comments",
             "/comments",
             List.of(primaryKey("id"), text("authorId"),
-                    text("text"), timestamp("createdDate"),
+                    text("text").writable(), timestamp("createdDate"),
                     text("taskId"))),
     WORKFLOW("workflows",
             "/workflows",
             "/workflows",
-            List.of(primaryKey("id"), text("name"),
+            List.of(primaryKey("id"), text("name").writable(),
                     bool("standard"), text("group"),
                     nestedTextArray("customStatusIds", "customStatuses", "id"))),
     CUSTOM_STATUS("custom_statuses",
             "/customstatuses",
-            List.of(primaryKey("id"), text("name"),
+            List.of(primaryKey("id"), text("name").writable(),
                     bool("standard"), text("group")));
 
     private final String tableName;
@@ -98,8 +98,8 @@ public enum WrikeEntityType {
         return baseEndpoint;
     }
 
-    public Collection<WrikeRestColumn> getColumns() {
-        return columns.values();
+    public List<WrikeRestColumn> getColumns() {
+        return columns.values().asList();
     }
 
     public WrikeRestColumn getPkColumn() {

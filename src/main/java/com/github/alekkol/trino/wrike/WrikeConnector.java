@@ -52,15 +52,22 @@ public class WrikeConnector implements Connector {
     public ConnectorPageSinkProvider getPageSinkProvider() {
         return new ConnectorPageSinkProvider() {
             @Override
-            public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle outputTableHandle) {
+            public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorOutputTableHandle outputTableHandle, ConnectorPageSinkId pageSinkId) {
                 throw new UnsupportedOperationException("DDL not supported");
             }
 
             @Override
-            public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle) {
+            public ConnectorPageSink createPageSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorInsertTableHandle insertTableHandle, ConnectorPageSinkId pageSinkId) {
                 WrikeInsertTableHandle wrikeInsertTableHandle = (WrikeInsertTableHandle) insertTableHandle;
 
                 return new WrikePageSink(wrikeInsertTableHandle.entityType());
+            }
+
+            @Override
+            public ConnectorMergeSink createMergeSink(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorMergeTableHandle mergeHandle, ConnectorPageSinkId pageSinkId) {
+                WrikeMergeTableHandle wrikeMergeHandle = (WrikeMergeTableHandle) mergeHandle;
+                WrikeTableHandle tableHandle = wrikeMergeHandle.tableHandle();
+                return new WrikeMergeSink(tableHandle.entityType());
             }
         };
     }
@@ -134,6 +141,25 @@ public class WrikeConnector implements Connector {
             }
 
             @Override
+            public ColumnHandle getMergeRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+                return WrikeColumnHandle.rowId();
+            }
+
+            @Override
+            public RowChangeParadigm getRowChangeParadigm(ConnectorSession session, ConnectorTableHandle tableHandle) {
+                return RowChangeParadigm.CHANGE_ONLY_UPDATED_COLUMNS;
+            }
+
+            @Override
+            public ConnectorMergeTableHandle beginMerge(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
+                return new WrikeMergeTableHandle((WrikeTableHandle) tableHandle);
+            }
+
+            @Override
+            public void finishMerge(ConnectorSession session, ConnectorMergeTableHandle mergeTableHandle, Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics) {
+            }
+
+            @Override
             public ConnectorInsertTableHandle beginInsert(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> columns, RetryMode retryMode) {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
 
@@ -195,34 +221,6 @@ public class WrikeConnector implements Connector {
             }
 
             @Override
-            public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
-                return WrikeColumnHandle.rowId();
-            }
-
-            @Override
-            public ConnectorTableHandle beginDelete(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
-                return tableHandle;
-            }
-
-            @Override
-            public void finishDelete(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
-            }
-
-            @Override
-            public ColumnHandle getUpdateRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns) {
-                return WrikeColumnHandle.rowId();
-            }
-
-            public ConnectorTableHandle beginUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, List<ColumnHandle> updatedColumns, RetryMode retryMode) {
-                WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
-                return wrikeTableHandle.withUpdatedColumns(updatedColumns.stream()
-                        .map(WrikeColumnHandle.class::cast)
-                        .toList());
-            }
-
-            public void finishUpdate(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
-            }
-
             public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
                 WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) tableHandle;
                 WrikeRestColumn pkColumn = wrikeTableHandle.entityType().getPkColumn();

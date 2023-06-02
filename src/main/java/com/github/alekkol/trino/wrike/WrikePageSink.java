@@ -1,18 +1,23 @@
 package com.github.alekkol.trino.wrike;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.connector.ConnectorPageSink;
 
-import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +25,7 @@ public class WrikePageSink implements ConnectorPageSink {
     private static final Pattern URI_PLACEHOLDER = Pattern.compile("\\$\\{(\\w+)}");
 
     private final WrikeEntityType entityType;
-    private CompletableFuture<String> future;
+    private final Set<String> updatedIds = ConcurrentHashMap.newKeySet();
 
     public WrikePageSink(WrikeEntityType entityType) {
         this.entityType = Objects.requireNonNull(entityType);
@@ -52,20 +57,30 @@ public class WrikePageSink implements ConnectorPageSink {
         regexMatcher.appendTail(insertEndpoint);
 
         String body = Joiner.on("&").withKeyValueSeparator('=').join(columnToFormField);
-        return future = Http.async(insertEndpoint, request -> request
-                .POST(BodyPublishers.ofString(body))
-                .header("Content-Type", "application/x-www-form-urlencoded"));
+        return Http.async(insertEndpoint, request -> request
+                        .POST(BodyPublishers.ofString(body))
+                        .header("Content-Type", "application/x-www-form-urlencoded"))
+                .thenAccept(response -> {
+                    JsonNode responseJson;
+                    try {
+                        responseJson = new ObjectMapper().readTree(response);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    String id = responseJson.get(entityType.getPkColumn().metadata().getName())
+                            .asText();
+                    updatedIds.add(id);
+                });
     }
 
     @Override
     public CompletableFuture<Collection<Slice>> finish() {
-        return future.thenCompose(response -> CompletableFuture.completedFuture(List.of()));
+        return CompletableFuture.completedFuture(updatedIds.stream()
+                .map(Slices::utf8Slice)
+                .toList());
     }
 
     @Override
     public void abort() {
-        if (!future.isDone()) {
-            future.cancel(true);
-        }
     }
 }

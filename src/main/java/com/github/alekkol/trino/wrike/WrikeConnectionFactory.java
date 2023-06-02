@@ -9,7 +9,7 @@ import java.util.Map;
 public class WrikeConnectionFactory implements ConnectorFactory {
     @Override
     public String getName() {
-        return "wrike-rest";
+        return "wrike_rest";
     }
 
     @Override

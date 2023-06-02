@@ -20,6 +20,7 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
     private final String responseColumn;
     private final boolean primaryKey;
     private final ColumnMetadata metadata;
+    private boolean readOnly;
 
     private WrikeTextRestColumn(String requestColumn, String responseColumn, boolean primaryKey) {
         this.requestColumn = Objects.requireNonNull(requestColumn);
@@ -30,6 +31,7 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
                 .setNullable(true)
                 .build();
         this.primaryKey = primaryKey;
+        this.readOnly = true;
     }
 
     public static WrikeTextRestColumn primaryKey(String name) {
@@ -44,6 +46,11 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
         return new WrikeTextRestColumn(requestColumn, responseColumn, false);
     }
 
+    public WrikeTextRestColumn writable() {
+        this.readOnly = false;
+        return this;
+    }
+
     @Override
     public boolean isPrimaryKey() {
         return primaryKey;
@@ -52,6 +59,11 @@ public class WrikeTextRestColumn implements WrikeRestColumn {
     @Override
     public ColumnMetadata metadata() {
         return metadata;
+    }
+
+    @Override
+    public boolean isWritable() {
+        return !readOnly;
     }
 
     @Override

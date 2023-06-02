@@ -46,6 +46,11 @@ public class WrikeNestedTextArrayRestColumn implements WrikeRestColumn {
     }
 
     @Override
+    public boolean isWritable() {
+        return false;
+    }
+
+    @Override
     public void toBlock(Map<String, ?> json, BlockBuilder blockBuilder) {
         Object raw = json.get(ownColumn);
         if (raw == null) {

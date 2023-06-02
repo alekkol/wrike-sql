@@ -1,11 +1,8 @@
 package com.github.alekkol.trino.wrike;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
-import io.airlift.slice.Slice;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
-import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
@@ -16,19 +13,14 @@ import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
-import io.trino.spi.connector.UpdatablePageSource;
 import io.trino.spi.type.Type;
 
 import java.io.IOException;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -42,8 +34,7 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
                                                 DynamicFilter dynamicFilter) {
         WrikeTableHandle wrikeTableHandle = (WrikeTableHandle) table;
         WrikeEntityType wrikeEntityType = wrikeTableHandle.entityType();
-        List<WrikeRestColumn> wrikeRestColumns = Stream
-                .concat(columns.stream(), wrikeTableHandle.updatedColumns().stream())
+        List<WrikeRestColumn> wrikeRestColumns = columns.stream()
                 .map(WrikeColumnHandle.class::cast)
                 .map(column -> {
                     if (column.isRowId()) {
@@ -61,16 +52,11 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
         record NextPageMark(String token, boolean terminal) {
         }
 
-        return new UpdatablePageSource() {
+        return new ConnectorPageSource() {
             final long startNanoTime = System.nanoTime();
             final AtomicLong completedBytes = new AtomicLong();
             NextPageMark nextPageMark = new NextPageMark(null, false);
             private boolean closed;
-
-            @Override
-            public CompletableFuture<Collection<Slice>> finish() {
-                return CompletableFuture.completedFuture(List.of());
-            }
 
             @Override
             public long getCompletedBytes() {
@@ -134,41 +120,6 @@ public class WrikePageSourceProvider implements ConnectorPageSourceProvider {
             public long getMemoryUsage() {
                 // local state is almost zero
                 return 0;
-            }
-
-            @Override
-            public void deleteRows(Block rowIds) {
-                for (int i = 0; i < rowIds.getPositionCount(); i++) {
-                    int len = rowIds.getSliceLength(i);
-                    Slice slice = rowIds.getSlice(i, 0, len);
-                    String uri = wrikeEntityType.getBaseEndpoint() + "/" + slice.toStringUtf8();
-                    Http.sync(uri, HttpRequest.Builder::DELETE);
-                }
-            }
-
-            @Override
-            public void updateRows(Page page, List<Integer> columnValueAndRowIdChannels) {
-                for (int position = 0; position < page.getPositionCount(); position++) {
-                    Block idBlock = page.getBlock(Iterables.getLast(columnValueAndRowIdChannels));
-                    Slice idSlice = idBlock.getSlice(position, 0, idBlock.getSliceLength(position));
-                    String uri = wrikeEntityType.getBaseEndpoint() + "/" + idSlice.toStringUtf8();
-
-                    StringBuilder body = new StringBuilder();
-                    for (int channel = 0; channel < columnValueAndRowIdChannels.size() - 1; channel++) {
-                        Block block = page.getBlock(columnValueAndRowIdChannels.get(channel));
-                        WrikeColumnHandle updatedColumn = wrikeTableHandle.updatedColumns().get(channel);
-                        WrikeRestColumn restColumn = wrikeEntityType.getColumn(updatedColumn.name());
-                        restColumn.toForm(block, position)
-                                .ifPresent(formPair -> body
-                                        .append('&')
-                                        .append(formPair.parameter())
-                                        .append('=')
-                                        .append(formPair.encodedValue()));
-                    }
-                    Http.sync(uri, request -> request
-                            .PUT(BodyPublishers.ofString(body.toString()))
-                            .header("Content-Type", "application/x-www-form-urlencoded"));
-                }
             }
 
             @Override

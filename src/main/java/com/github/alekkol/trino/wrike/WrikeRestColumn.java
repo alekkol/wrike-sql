@@ -21,6 +21,8 @@ public interface WrikeRestColumn {
 
     ColumnMetadata metadata();
 
+    boolean isWritable();
+
     void toBlock(Map<String, ?> json, BlockBuilder blockBuilder);
 
     Optional<FormField> toForm(Block block, int position);
