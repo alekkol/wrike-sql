@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static io.trino.spi.type.BigintType.BIGINT;
 import static io.trino.spi.type.TimestampType.TIMESTAMP_SECONDS;
 
 public class WrikeTimestampRestColumn implements WrikeRestColumn {
@@ -53,7 +54,7 @@ public class WrikeTimestampRestColumn implements WrikeRestColumn {
             blockBuilder.appendNull();
         } else if (raw instanceof String date) {
             long epochMicros = Instant.parse(date).getEpochSecond() * 1_000_000;
-            blockBuilder.writeLong(epochMicros).closeEntry();
+            BIGINT.writeLong(blockBuilder, epochMicros);
         } else {
             throw new IllegalStateException("Not a string " + raw);
         }
